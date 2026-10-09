@@ -175,8 +175,9 @@ function drv(s, extra = "") {
 const nomeP = s => (piloti()[s] || {}).nome || s;
 
 // ------------------------------------------------------------------ dati
+const LOCALE = ["127.0.0.1", "localhost"].includes(location.hostname);   // la pagina del Mac, non il sito
 async function carica() {
-  try {
+  if (LOCALE) try {
     const r = await fetch("/api/dati", {cache: "no-store"});
     if (r.status === 503) { const j = await r.json(); $("#main").innerHTML = `<div class="empty">${esc(j.attesa)}</div>`; MAC = true; return false; }
     if (r.ok && (r.headers.get("content-type") || "").includes("json")) { D = await r.json(); MAC = true; return true; }

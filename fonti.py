@@ -77,6 +77,7 @@ class Fonti:
         self.s = None
         self.r_of, self.r_jo, self.r_alt = Ritmo(2.05), Ritmo(0.3), Ritmo(0.2)   # OpenF1: 30 al minuto
         self.errori = {}   # fonte -> ultimo errore (si azzera quando torna a rispondere)
+        self.pausa_openf1 = 0   # durante una sessione OpenF1 chiude tutto a chi non è abbonato: fino a quando non si riprova
         self.cred = credenziali_openf1()
         self.token, self.scade = None, 0
         if self.cred:   # con l'abbonamento OpenF1 concede più richieste
@@ -85,6 +86,10 @@ class Fonti:
     @property
     def abbonato(self):
         return bool(self.cred)
+
+    @property
+    def openf1_in_pausa(self):
+        return time.time() < self.pausa_openf1
 
     async def intestazioni_openf1(self):
         if not self.cred:
@@ -146,7 +151,14 @@ class Fonti:
                     k = k[: -len(suf)] + op
                     break
             p[k] = str(v)
-        d = await self.get("OpenF1", f"{OPENF1}/{ep}", p, self.r_of, headers=await self.intestazioni_openf1())
+        if time.time() < self.pausa_openf1:
+            raise NonDisponibile("OpenF1 è chiuso durante la sessione")
+        try:
+            d = await self.get("OpenF1", f"{OPENF1}/{ep}", p, self.r_of, headers=await self.intestazioni_openf1())
+        except NonDisponibile:
+            # «Live F1 session in progress»: niente dati, nemmeno quelli vecchi, finché la sessione non finisce
+            self.pausa_openf1 = time.time() + 120
+            raise
         if isinstance(d, dict):
             msg = str(d.get("detail") or d.get("error") or "")
             if "No results" in msg:

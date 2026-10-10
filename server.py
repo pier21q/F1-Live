@@ -242,7 +242,8 @@ def calcola(adesso=None, ritara=False):
         "passo": {"squadre": {s: {k: model.r(v.get(k)) for k in ("q", "r", "adatt")} for s, v in val["squadre"].items()}},
         "storico": {"voci": storico[-80:], "riepilogo": model.riepilogo_storico(storico)},
         "modello": {"parametri": par, "tarato_su": par_file.get("eventi")},
-        "fonti": {"errori": dict(STATO["errori"]), "stagione_at": st.get("at")},
+        "fonti": {"errori": dict(STATO["errori"]), "stagione_at": st.get("at"),
+                  "openf1_in_pausa": bool(STATO.get("openf1_in_pausa"))},
     }
     STATO["foto"] = foto
     STATO["contesto"] = contesto
@@ -342,7 +343,7 @@ async def aggiorna_fonti(f, adesso, forza=False):
     ogni = 10 * 60 if in_weekend else 30 * 60
     if forza or not st or adesso - st.get("at", 0) > ogni:
         try:
-            nuovo = await dati.stagione(f, ANNO)
+            nuovo = await dati.stagione(f, ANNO, st)
             scrivi(FILE_STAGIONE, nuovo)
             st = nuovo
             cambiato = True
@@ -380,6 +381,7 @@ async def aggiorna_fonti(f, adesso, forza=False):
                 cambiato = True
             except RuntimeError as e:
                 STATO["errori"]["meteo"] = str(e)
+    STATO["openf1_in_pausa"] = f.openf1_in_pausa
     STATO["errori"].update({k: v for k, v in f.errori.items()})
     for k in ("OpenF1", "Jolpica", "Open-Meteo"):
         if k not in f.errori:
@@ -442,8 +444,8 @@ class Live:
             self.at = time.time()
             self.n += 1
         except NonDisponibile as e:
-            self.errore = ("Il live non è disponibile: OpenF1 dà i dati durante la sessione solo con l'abbonamento "
-                           "(9,90 € al mese). Senza, arrivano a sessione finita e compaiono nella scheda Weekend."
+            self.errore = ("Il live non è disponibile: durante la sessione OpenF1 dà i dati solo agli abbonati "
+                           "(9,90 € al mese). A sessione finita i risultati compaiono nella scheda Weekend."
                            if not f.abbonato else f"OpenF1 non ha dato i dati live: {e}")
         except RuntimeError as e:
             self.errore = str(e)
@@ -525,7 +527,10 @@ def prob_live(stato, evento):
     giro_t = model.mediana(tempi) or 95
     pron = (w["pronostici"].get("Gara" if evento == "Race" else "Sprint") or {}).get("piloti") or []
     passo = {p["sigla"]: p["r"] for p in pron}
-    pit = (w.get("tracciato") or {}).get("pit") or 22
+    tr = w.get("tracciato") or {}
+    pit = tr.get("pit") if isinstance(tr.get("pit"), (int, float)) else 22
+    if stato.get("neutralizzata") in ("SC", "VSC") and isinstance(tr.get("pit_sc"), (int, float)):
+        pit = tr["pit_sc"] if stato["neutralizzata"] == "SC" else (tr.get("pit_vsc") or pit)   # sotto SC la sosta costa meno
     soste_attese = 0 if evento == "Sprint" else max(1, w["strategia"].get("tipica") or 1)
     par = STATO.get("par") or model.PARAMETRI
     # stare davanti vale: per superare serve essere più veloci, tanto più quanto il circuito è difficile

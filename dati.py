@@ -47,8 +47,9 @@ def file_sessione(sk):
 
 # ---------------------------------------------------------------- stagione
 
-async def stagione(f, anno):
-    """Calendario e risultati Jolpica, riunioni e sessioni OpenF1 di un anno."""
+async def stagione(f, anno, vecchia=None):
+    """Calendario e risultati Jolpica, riunioni e sessioni OpenF1 di un anno. Se OpenF1 è chiuso (durante una
+    sessione, senza abbonamento) riunioni e sessioni restano quelle già salvate."""
     d = {"anno": anno, "at": time.time()}
     d["gare"] = await f.jolpica(f"{anno}/races", "RaceTable", "Races")
     d["risultati"] = await f.jolpica_righe(f"{anno}/results", "RaceTable", "Races", "Results")
@@ -58,8 +59,13 @@ async def stagione(f, anno):
     cos = await f.jolpica(f"{anno}/constructorstandings", "StandingsTable", "StandingsLists")
     d["classifica_piloti"] = pil[-1] if pil else None
     d["classifica_costruttori"] = cos[-1] if cos else None
-    d["riunioni"] = await f.openf1("meetings", year=anno)
-    d["sessioni"] = await f.openf1("sessions", year=anno)
+    try:
+        d["riunioni"] = await f.openf1("meetings", year=anno)
+        d["sessioni"] = await f.openf1("sessions", year=anno)
+    except NonDisponibile:
+        if not vecchia:
+            raise
+        d["riunioni"], d["sessioni"] = vecchia.get("riunioni") or [], vecchia.get("sessioni") or []
     return d
 
 
@@ -155,8 +161,8 @@ async def aggiorna_sessioni(f, sessioni, adesso, limite=None):
             continue
         try:
             d = await scarica_sessione(f, s)
-        except NonDisponibile:
-            continue
+        except NonDisponibile:   # OpenF1 chiuso durante una sessione: si riprova al giro dopo
+            break
         except RuntimeError as e:   # la fonte non risponde: si riprova al giro dopo
             log(f"Sessione {s['session_key']} non scaricata: {e}")
             break
@@ -252,8 +258,13 @@ async def tracciato(f, circuit_key, anno):
     if not d or not d.get("x"):
         return vecchio
     passo = max(1, len(d["x"]) // 260)   # basta un punto ogni tanto per disegnarlo
+    pit = d.get("pitLoss") or {}
+    if not isinstance(pit, dict):
+        pit = {"normal": pit}
+    num = lambda v: float(v) if v not in (None, "") else None
     out = {"anno": anno, "x": d["x"][::passo], "y": d["y"][::passo], "rotazione": d.get("rotation") or 0,
-           "pit": d.get("pitLoss"), "curve": [[c["number"], round(c["trackPosition"]["x"]), round(c["trackPosition"]["y"])]
+           # secondi persi con un pit stop: normale, sotto safety car e sotto virtual safety car
+           "pit": num(pit.get("normal")), "pit_sc": num(pit.get("sc")), "pit_vsc": num(pit.get("vsc")), "curve": [[c["number"], round(c["trackPosition"]["x"]), round(c["trackPosition"]["y"])]
                                              for c in d.get("corners") or []]}
     scrivi(path, out)
     return out

@@ -20,6 +20,10 @@ DURATA_SPRINT = 1850.0
 CARBURANTE = 0.055       # secondi al giro che la macchina guadagna perché si alleggerisce
 RECENZA = 0.82           # peso di una gara rispetto alla successiva
 RITIRO_BASE = 0.07       # 2026, regolamento nuovo: più ritiri del solito
+# Imprevisti che le gare 2026 già corse non bastano a tarare, usati solo per il titolo (sul resto della stagione contano):
+# penalità in griglia (cambi di power unit, soprattutto a fine stagione), squalifiche o gare saltate per infortunio,
+# e quanto poco sappiamo davvero del passo di ogni pilota (stimato su 16 gare).
+IMPREVISTI = {"penalita_griglia": 0.05, "posti_penalita": 10, "esclusione": 0.007, "incertezza_pilota": 0.06}
 PARAMETRI = {"sq": 0.3, "sr": 0.4, "kg": 3.0, "s1": 4.0, "sw": 0.15}   # sostituiti dalla taratura sulle gare 2026
 
 
@@ -467,9 +471,9 @@ def prob_ritiro(st_ris, misure, prima_di_round):
 
 
 def simula(pil, evento, circ, par, n_sim=6000, griglia=None, ritiro=None, ritiro_base=RITIRO_BASE, p_pioggia=0.0,
-           seed=1):
+           seed=1, imprevisti=False):
     """Monte Carlo di qualifica (se la griglia non c'è ancora) e gara o sprint.
-    pil: {sigla: {q, r, squadra}}; evento: "Race" o "Sprint"."""
+    pil: {sigla: {q, r, squadra}}; evento: "Race" o "Sprint". Con imprevisti: penalità in griglia ed esclusioni."""
     rng = random.Random(seed)
     piloti = [s for s, p in pil.items() if p.get("q") is not None or p.get("r") is not None]
     if len(piloti) < 10:
@@ -502,6 +506,10 @@ def simula(pil, evento, circ, par, n_sim=6000, griglia=None, ritiro=None, ritiro
             conta[ordine_g[0]]["pole"] += 1
             for s in ordine_g[:10]:
                 conta[s]["q10"] += 1
+        if imprevisti and not sprint:
+            arretra = {s: IMPREVISTI["posti_penalita"] if rng.random() < IMPREVISTI["penalita_griglia"] else 0
+                       for s in ordine_g}
+            ordine_g = sorted(ordine_g, key=lambda s: (ordine_g.index(s) + arretra[s] + 0.5 * (arretra[s] > 0)))
         pioggia = rng.random() < p_pioggia
         sc = rng.random() < p_sc
         sr = par["sr"] * (2.3 if pioggia else 1.0)
@@ -509,7 +517,7 @@ def simula(pil, evento, circ, par, n_sim=6000, griglia=None, ritiro=None, ritiro
         fuori = []
         for i, s in enumerate(ordine_g):
             pr = ritiro.get(pil[s].get("squadra"), ritiro_base) * (0.4 if sprint else 1.0) + (0.04 if pioggia else 0)
-            if rng.random() < pr:
+            if rng.random() < pr or (imprevisti and rng.random() < IMPREVISTI["esclusione"]):
                 fuori.append(s)
                 continue
             deficit = (rv[s] + forma[pil[s].get("squadra")] + rng.gauss(0, sr)) / 100 * durata
@@ -580,7 +588,8 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
         # le squadre sviluppano la macchina: un piccolo spostamento casuale a ogni gara
         # anche i piloti hanno periodi migliori e peggiori
         deriva = defaultdict(float)
-        deriva_p = defaultdict(float)
+        # il passo di ogni pilota è una stima: in ogni stagione simulata può essere un po' diverso da quello calcolato
+        deriva_p = defaultdict(lambda: rng.gauss(0, IMPREVISTI["incertezza_pilota"]))
         for tipo, w, circ, pil in eventi:
             if tipo == "Race" or not w["sprint"]:
                 for sq in set(p.get("squadra") for p in pil.values()):
@@ -592,7 +601,7 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
                             r=(p["r"] + d[s]) if p.get("r") is not None else None)
                     for s, p in pil.items()}
             ris = simula(pil2, tipo, circ, par, n_sim=1, ritiro=ritiro, ritiro_base=ritiro_base,
-                         seed=rng.randrange(1 << 30))
+                         seed=rng.randrange(1 << 30), imprevisti=True)
             if not ris:
                 continue
             ordine = sorted(ris, key=lambda s: ris[s]["pos"])

@@ -257,7 +257,8 @@ class Misure:
 
     def __init__(self, wk, sess):
         self.wk = {w["round"]: w for w in wk}
-        self.q, self.sq, self.r, self.sp, self.fp1, self.fpl = {}, {}, {}, {}, {}, {}
+        self.q, self.sq, self.r, self.sp = {}, {}, {}, {}
+        self.fp1, self.fpl = defaultdict(dict), defaultdict(dict)   # round -> {nome delle libere: misura}
         self.deg = {}
         self.fine = {}     # (round, nome sessione) -> fine
         self.squadra = {}  # (round, sigla) -> squadra
@@ -280,8 +281,8 @@ class Misure:
                 elif nome == "Sprint":
                     self.sp[rd] = passo_gara(s)
                 elif nome.startswith("Practice"):
-                    self.fp1.setdefault(rd, []).append(distacchi_giro_secco(s, 4))
-                    self.fpl.setdefault(rd, []).append(passo_lungo_libere(s))
+                    self.fp1[rd][nome] = distacchi_giro_secco(s, 4)
+                    self.fpl[rd][nome] = passo_lungo_libere(s)
 
     def finita(self, rd, nome, prima_di):
         f = self.fine.get((rd, nome))
@@ -330,6 +331,12 @@ def valuta(misure, prima_di, cittadino=None, solo_round_prima=None):
         for rd, w, sig, sq, d, nome in sorted(campioni[chi]):
             if sig not in attuale or rd >= attuale[sig][0]:
                 attuale[sig] = (rd, sq)
+    # titolari: per ogni squadra i due piloti visti più di recente (chi ha sostituito qualcuno per qualche gara,
+    # come Tsunoda nel 2026, non corre più nelle gare simulate)
+    per_sq_vista = defaultdict(list)
+    for sig, (rd, sq) in attuale.items():
+        per_sq_vista[sq].append((rd, sig))
+    titolari = {sig for xs in per_sq_vista.values() for rd, sig in sorted(xs, reverse=True)[:2]}
     attuale = {sig: sq for sig, (rd, sq) in attuale.items()}
     # tipo di pista: quanto ogni squadra va meglio o peggio sui circuiti cittadini
     adatt = {}
@@ -346,6 +353,7 @@ def valuta(misure, prima_di, cittadino=None, solo_round_prima=None):
         t = out_sq.get(sq, {})
         p = out_pil[sig]
         p["squadra"] = sq
+        p["titolare"] = sig in titolari
         a = adatt.get(sq, 0)
         p["adatt"] = a
         if t.get("q") is not None:
@@ -374,13 +382,13 @@ def aggiorna_con_weekend(val, misure, rd, prima_di):
         usato.append(etichetta)
 
     nomi_fp = sorted(n for n in misure.wk[rd]["sessioni"] if n.startswith("Practice"))
-    for i, nome in enumerate(nomi_fp):
+    for nome in nomi_fp:
         if not misure.finita(rd, nome, prima_di):
             continue
-        if i < len(misure.fp1.get(rd, [])):
-            miscela(misure.fp1[rd][i], "q", 0.12, NOMI_SESSIONE.get(nome, nome) + " (giro secco)")
-        if i < len(misure.fpl.get(rd, [])):
-            miscela(misure.fpl[rd][i], "r", 0.12, NOMI_SESSIONE.get(nome, nome) + " (passo lungo)")
+        if nome in misure.fp1.get(rd, {}):
+            miscela(misure.fp1[rd][nome], "q", 0.12, NOMI_SESSIONE.get(nome, nome) + " (giro secco)")
+        if nome in misure.fpl.get(rd, {}):
+            miscela(misure.fpl[rd][nome], "r", 0.12, NOMI_SESSIONE.get(nome, nome) + " (passo lungo)")
     if misure.finita(rd, "Sprint Qualifying", prima_di):
         miscela(misure.sq.get(rd), "q", 0.45, "Qualifica sprint")
     if misure.finita(rd, "Sprint", prima_di):
@@ -406,7 +414,8 @@ def storia_circuito(storia, ck, cittadino):
     return {"gare": len(qui), "nuovo": False, "anni": sorted({g["anno"] for g in qui}), **_aggrega(qui, rho_media)}
 
 
-CITTADINI = {"Melbourne", "Monte Carlo", "Baku", "Singapore", "Jeddah", "Miami", "Las Vegas", "Madrid"}
+# i circuiti cittadini con il nome breve di OpenF1 (Madrid è «Madring»)
+CITTADINI = {"Melbourne", "Monte Carlo", "Baku", "Singapore", "Jeddah", "Miami", "Las Vegas", "Madrid", "Madring"}
 
 
 def _spearman(coppie):
@@ -549,39 +558,64 @@ def simula(pil, evento, circ, par, n_sim=6000, griglia=None, ritiro=None, ritiro
     return out
 
 
-def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, seed=7):
-    """Il resto della stagione simulato gara per gara: probabilità di titolo piloti e costruttori."""
+def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, seed=7, misure=None, sess=None):
+    """Il resto della stagione simulato gara per gara: probabilità di titolo piloti e costruttori.
+    Si parte dalla classifica Jolpica; le sprint e le gare già corse che Jolpica non ha ancora contato (succede per
+    qualche ora dopo l'arrivo) entrano con i punti veri di OpenF1 invece di essere simulate."""
     cp = (st.get("classifica_piloti") or {}).get("DriverStandings") or []
     cc = (st.get("classifica_costruttori") or {}).get("ConstructorStandings") or []
     if not cp:
         return None
+    sess = sess or {}
     fatte = int(st["classifica_piloti"]["round"])
-    restano = [w for w in wk if w["round"] > fatte]
+    gare_jolpica = {int(g["round"]) for g in st.get("risultati") or []}
     punti0 = {x["Driver"]["code"]: float(x["points"]) for x in cp}
+    # i punti dei costruttori veri: si parte da quelli di Jolpica, con i nomi di OpenF1. Il nome si ricava dai
+    # risultati gara per gara (un pilota può aver guidato per due squadre, come Lawson nel 2026)
+    nomi_c = {}
+    for g in st.get("risultati") or []:
+        for x in g["Results"]:
+            sq = misure.squadra.get((int(g["round"]), x["Driver"]["code"])) if misure else None
+            if sq:
+                nomi_c[x["Constructor"]["constructorId"]] = sq
+    c0 = {nomi_c.get(x["Constructor"]["constructorId"]) or x["Constructor"]["name"]: float(x["points"]) for x in cc}
     squadra_di = {}
     eventi = []
-    for w in restano:
+    corsi = []   # eventi finiti ma non ancora nella classifica Jolpica
+    for w in wk:
+        if w["round"] < fatte:
+            continue
+        evs = (["Sprint"] if w["sprint"] else []) + ["Race"]
+        if w["round"] == fatte:
+            # la classifica del round `fatte` comprende la sprint; la gara solo se Jolpica ne ha già il risultato
+            evs = [] if fatte in gare_jolpica else ["Race"]
+        if not evs:
+            continue
         circ = storia_circuito(storia, w["ck"], w["cittadino"])
-        pil = val_fn(w)
-        for s, p in pil.items():
-            squadra_di[s] = p.get("squadra")
-        if w["sprint"]:
-            eventi.append(("Sprint", w, circ, pil))
-        eventi.append(("Race", w, circ, pil))
+        pil = None
+        for ev in evs:
+            s = sess.get(w["sessioni"].get(ev))
+            if s and s.get("risultato") and any(x.get("punti") for x in s["risultato"]):
+                corsi.append((s, ev, w))
+                continue
+            if pil is None:
+                pil = val_fn(w)   # già ristretto a chi corre (vedi solo_chi_corre)
+                for k, v in pil.items():
+                    squadra_di[k] = v.get("squadra")
+            eventi.append((ev, w, circ, pil))
+    for s, _, _ in corsi:
+        sg, sqs = sigle(s), squadre(s)
+        for x in s["risultato"]:
+            sig = sg.get(x["n"])
+            if sig and x.get("punti"):
+                punti0[sig] = punti0.get(sig, 0) + x["punti"]
+                if sqs.get(sig):
+                    c0[sqs[sig]] = c0.get(sqs[sig], 0) + x["punti"]
     rng = random.Random(seed)
     titoli = Counter()
     titoli_c = Counter()
     finali = defaultdict(float)
     finali_c = defaultdict(float)
-    sq_punti0 = defaultdict(float)
-    for s, p in punti0.items():
-        sq_punti0[squadra_di.get(s) or s] += p
-    # i punti dei costruttori veri (un pilota può aver cambiato squadra): si parte da quelli di Jolpica, con i nomi
-    # di OpenF1 dove si riesce
-    nomi_c = {}
-    for x in cp:
-        nomi_c[x["Constructors"][-1]["constructorId"]] = squadra_di.get(x["Driver"]["code"])
-    c0 = {nomi_c.get(x["Constructor"]["constructorId"]) or x["Constructor"]["name"]: float(x["points"]) for x in cc}
     for i in range(n_sim):
         pt = dict(punti0)
         ptc = dict(c0)
@@ -623,7 +657,9 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
             finali_c[s] += p
     return {
         "gare_rimaste": sum(1 for e in eventi if e[0] == "Race"), "sprint_rimaste": sum(1 for e in eventi if e[0] == "Sprint"),
-        "punti_in_palio": sum(26 if e[0] == "Race" else 8 for e in eventi) - sum(1 for e in eventi if e[0] == "Race"),
+        "punti_in_palio": sum(25 if e[0] == "Race" else 8 for e in eventi),
+        # corse finite che la classifica ufficiale (Jolpica) non conta ancora: i loro punti sono già in "punti"
+        "aggiunti": [("Sprint" if ev == "Sprint" else "Gara") + " " + w["nome"] for _, ev, w in corsi],
         "piloti": sorted([{"sigla": s, "punti": punti0.get(s, 0), "titolo": titoli[s] / n_sim, "finali": finali[s] / n_sim,
                            "squadra": squadra_di.get(s)} for s in punti0], key=lambda x: -x["finali"]),
         "costruttori": sorted([{"squadra": s, "punti": c0.get(s, 0), "titolo": titoli_c[s] / n_sim,
@@ -662,6 +698,18 @@ def griglia_da(misure, rd, sess, evento):
     return ordine or None
 
 
+def solo_chi_corre(pil, w, sess, prima_di):
+    """Solo chi corre questo weekend: gli iscritti delle sessioni già iniziate (le libere 1 no: spesso ci sono i
+    giovani al posto dei titolari) o, prima del weekend, i due titolari di ogni squadra."""
+    iscritti = set()
+    for nome, sk in w["sessioni"].items():
+        if nome != "Practice 1" and sk in sess and sess[sk]["inizio"] < prima_di:
+            iscritti |= set(squadre(sess[sk]))
+    if len(iscritti) >= 18:
+        return {s: p for s, p in pil.items() if s in iscritti}
+    return {s: p for s, p in pil.items() if p.get("titolare", True)}
+
+
 def previsione_evento(contesto, w, evento, prima_di, par, n_sim=6000, seed=1):
     """Pronostico di una sprint o di una gara con i dati disponibili prima di `prima_di`."""
     misure, sess, storia, st = contesto["misure"], contesto["sess"], contesto["storia"], contesto["st"]
@@ -671,13 +719,7 @@ def previsione_evento(contesto, w, evento, prima_di, par, n_sim=6000, seed=1):
     usato = []
     if any(misure.finita(rd, n, prima_di) for n in w["sessioni"]):
         pil, usato = aggiorna_con_weekend({"piloti": pil}, misure, rd, prima_di)
-    # solo chi corre questo weekend, se lo sappiamo (le libere 1 no: spesso ci sono i giovani al posto dei titolari)
-    iscritti = set()
-    for nome, sk in w["sessioni"].items():
-        if nome != "Practice 1" and sk in sess and sess[sk]["inizio"] < prima_di:
-            iscritti |= set(squadre(sess[sk]))
-    if len(iscritti) >= 18:
-        pil = {s: p for s, p in pil.items() if s in iscritti}
+    pil = solo_chi_corre(pil, w, sess, prima_di)
     nome_q = "Sprint Qualifying" if evento == "Sprint" else "Qualifying"
     griglia = griglia_da(misure, rd, sess, evento) if misure.finita(rd, nome_q, prima_di) else None
     circ = storia_circuito(storia, w["ck"], w["cittadino"])
@@ -848,31 +890,44 @@ def statistiche(contesto, val):
         for x in g["SprintResults"]:
             piloti[x["Driver"]["code"]]["punti_sprint"] += float(x["points"])
             piloti[x["Driver"]["code"]]["vittorie_sprint"] += int(x["position"]) == 1
+    h2h = defaultdict(lambda: {"q": [0, 0], "r": [0, 0], "gap_q": []})
     for g in st.get("qualifiche") or []:
+        per_sq = defaultdict(list)
         for x in g["QualifyingResults"]:
             p = piloti[x["Driver"]["code"]]
             p["pole"] += int(x["position"]) == 1
             p["somma_qualifica"] += int(x["position"])
             p["qualifiche"] += 1
             p["q3"] += int(x["position"]) <= 10
-    # testa a testa col compagno e distacchi medi, da OpenF1
-    h2h = defaultdict(lambda: {"q": [0, 0], "r": [0, 0], "gap_q": []})
+            per_sq[x["Constructor"]["constructorId"]].append((int(x["position"]), x["Driver"]["code"]))
+        # testa a testa in qualifica: chi dei due compagni si è qualificato davanti (posizione ufficiale)
+        for xs in per_sq.values():
+            if len(xs) == 2:
+                (_, a), (_, b) = sorted(xs)
+                h2h[a]["q"][0] += 1
+                h2h[b]["q"][1] += 1
+    # distacco dal compagno in qualifica, da OpenF1: nell'ultima fase (Q1, Q2 o Q3) in cui hanno girato tutti e due
     velocita = defaultdict(list)
     sorpassi = defaultdict(lambda: [0, 0])
     giri_veloci = Counter()
     for w in wk:
         rd = w["round"]
-        q = misure.q.get(rd) or {}
-        sq_rd = {}
-        for sig in q:
-            sq_rd.setdefault(misure.squadra.get((rd, sig)), []).append(sig)
-        for sq, ss in sq_rd.items():
-            if len(ss) == 2:
-                a, b = ss
-                h2h[a]["q"][0 if q[a] < q[b] else 1] += 1
-                h2h[b]["q"][0 if q[b] < q[a] else 1] += 1
-                h2h[a]["gap_q"].append(q[a] - q[b])
-                h2h[b]["gap_q"].append(q[b] - q[a])
+        sq_s = sess.get(w["sessioni"].get("Qualifying"))
+        if sq_s:
+            sg = sigle(sq_s)
+            tempi = defaultdict(list)
+            for x in sq_s.get("risultato") or []:
+                sig = sg.get(x["n"])
+                if sig and isinstance(x.get("tempo"), list):
+                    tempi[misure.squadra.get((rd, sig))].append((sig, x["tempo"]))
+            for sq, xs in tempi.items():
+                if sq and len(xs) == 2:
+                    (a, ta), (b, tb) = xs
+                    fasi = [k for k in range(min(len(ta), len(tb))) if ta[k] and tb[k]]
+                    if fasi:
+                        k = fasi[-1]
+                        h2h[a]["gap_q"].append((ta[k] / tb[k] - 1) * 100)
+                        h2h[b]["gap_q"].append((tb[k] / ta[k] - 1) * 100)
         s = sess.get(w["sessioni"].get("Race"))
         if s:
             ordine, fuori = risultato_ordinato(s)
@@ -932,11 +987,20 @@ def statistiche(contesto, val):
     # squadre
     cc = (st.get("classifica_costruttori") or {}).get("ConstructorStandings") or []
     squadra_jolpica = {}
+    # podi, pole e ritiri della squadra con cui il pilota correva quel giorno (Lawson nel 2026 ha corso per due)
+    per_cid = defaultdict(Counter)
     for g in st.get("risultati") or []:
         for x in g["Results"]:
+            cid = x["Constructor"]["constructorId"]
             sq = misure.squadra.get((int(g["round"]), x["Driver"]["code"]))
             if sq:
-                squadra_jolpica[x["Constructor"]["constructorId"]] = sq
+                squadra_jolpica[cid] = sq
+            fin = x["status"] in ("Finished", "Lapped") or x["status"].startswith("+")
+            per_cid[cid]["podi"] += int(x["position"]) <= 3
+            per_cid[cid]["ritiri"] += not fin
+    for g in st.get("qualifiche") or []:
+        for x in g["QualifyingResults"]:
+            per_cid[x["Constructor"]["constructorId"]]["pole"] += int(x["position"]) == 1
     deg = defaultdict(lambda: defaultdict(list))
     rds = sorted(misure.deg)
     for i, rd in enumerate(rds):
@@ -968,13 +1032,14 @@ def statistiche(contesto, val):
         cid = x["Constructor"]["constructorId"]
         sq = squadra_jolpica.get(cid) or x["Constructor"]["name"]
         v = vsq.get(sq, {})
-        membri = [p for p in out_p if p["squadra"] == sq]
+        # i due piloti di adesso (chi ha fatto solo qualche gara da sostituto non compare)
+        membri = [p for p in out_p if p["squadra"] == sq and (val["piloti"].get(p["sigla"]) or {}).get("titolare", True)]
         stor = andamento_squadra(misure, sq)
         out_s.append({
             "squadra": sq, "id": cid, "posizione": int(x["position"]) if x.get("position") else None,
             "punti": float(x["points"]), "vittorie": int(x["wins"]), "colore": colori.get(sq),
-            "piloti": [p["sigla"] for p in membri], "podi": sum(p["podi"] for p in membri),
-            "pole": sum(p["pole"] for p in membri), "ritiri": sum(p["ritiri"] for p in membri),
+            "piloti": [p["sigla"] for p in membri], "podi": per_cid[cid]["podi"],
+            "pole": per_cid[cid]["pole"], "ritiri": per_cid[cid]["ritiri"],
             "passo_q": r(v.get("q")), "passo_r": r(v.get("r")), "cittadini": r(cittadini_squadra(misure, sq)),
             "degrado": {m: r(wmedia(d), 3) for m, d in deg[sq].items() if len(d) >= 3},
             "pit": r(mediana(pit.get(sq, [])), 2), "pit_n": len(pit.get(sq, [])),
@@ -1038,10 +1103,11 @@ def perche(prev, val, circ, w, evento, usato, griglia, pioggia, statistiche_sq):
         out.append(f"Qui sorpassare è difficile (griglia e arrivo coincidono molto, indice {it(rho)}): conta la qualifica.")
     elif rho < 0.55:
         out.append(f"Pista dove si sorpassa (indice griglia-arrivo {it(rho)}): il passo gara pesa più della posizione di partenza.")
+    dove = "sui circuiti simili" if circ.get("nuovo") else "qui"
     if circ["p_sc"] >= 0.6:
-        out.append(f"Safety car in {circ['p_sc'] * 100:.0f}% delle gare qui dal 2023: rimescola i distacchi e aiuta chi insegue.")
+        out.append(f"Safety car in {circ['p_sc'] * 100:.0f}% delle gare {dove} dal 2023: rimescola i distacchi e aiuta chi insegue.")
     elif circ["p_sc"] <= 0.3:
-        out.append(f"Safety car rara qui ({circ['p_sc'] * 100:.0f}% delle gare): vince di solito chi è più veloce.")
+        out.append(f"Safety car rara {dove} ({circ['p_sc'] * 100:.0f}% delle gare): vince di solito chi è più veloce.")
     if circ.get("nuovo"):
         out.append("Circuito senza storia recente: per safety car e sorpassi si usa la media dei circuiti simili.")
     if pioggia >= 0.25:

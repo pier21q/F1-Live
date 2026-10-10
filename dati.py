@@ -91,6 +91,20 @@ def _neutralizzati(rc):
     return sorted(giri)
 
 
+def posizione(r):
+    """OpenF1 a volte mette una sigla al posto della posizione («RT» ritirato, «DQ», «NC», «DNS»): la posizione
+    diventa vuota e la sigla finisce nei campi dnf, dsq e dns."""
+    p, sigla = r.get("pos"), None
+    if isinstance(p, str):
+        p, sigla = (int(p), None) if p.isdigit() else (None, p.upper())
+    if sigla:
+        r["dnf"] = r.get("dnf") or sigla in ("RT", "RET", "NC", "DNF")
+        r["dsq"] = r.get("dsq") or sigla in ("DQ", "DSQ")
+        r["dns"] = r.get("dns") or sigla in ("DNS",)
+    r["pos"] = p if isinstance(p, int) else None
+    return r
+
+
 def compatta(s, piloti, giri, gomme, rc, meteo, risultato, pit, sorpassi):
     rc_k = []
     for e in rc:
@@ -124,9 +138,9 @@ def compatta(s, piloti, giri, gomme, rc, meteo, risultato, pit, sorpassi):
         "meteo": {"pioggia": pioggia, "aria": [min(aria), max(aria)] if aria else None,
                   "asfalto": [min(asfalto), max(asfalto)] if asfalto else None},
         "sorpassi": [[o["overtaking_driver_number"], o["overtaken_driver_number"], o.get("position")] for o in sorpassi],
-        "risultato": [{"pos": r.get("position"), "n": r["driver_number"], "giri": r.get("number_of_laps"),
-                       "dnf": r.get("dnf"), "dns": r.get("dns"), "dsq": r.get("dsq"), "tempo": r.get("duration"),
-                       "distacco": r.get("gap_to_leader"), "punti": r.get("points")} for r in risultato],
+        "risultato": [posizione({"pos": r.get("position"), "n": r["driver_number"], "giri": r.get("number_of_laps"),
+                                 "dnf": r.get("dnf"), "dns": r.get("dns"), "dsq": r.get("dsq"), "tempo": r.get("duration"),
+                                 "distacco": r.get("gap_to_leader"), "punti": r.get("points")}) for r in risultato],
     }
 
 
@@ -182,6 +196,8 @@ def sessioni_salvate(chiavi):
     for sk in chiavi:
         d = leggi(file_sessione(sk))
         if d:
+            for r in d.get("risultato") or []:   # anche le sessioni salvate prima della correzione
+                posizione(r)
             out[sk] = d
     return out
 

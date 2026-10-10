@@ -27,7 +27,7 @@ from fonti import Fonti, NonDisponibile, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-10"
+VERSIONE = "2026-10-10.2"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -90,7 +90,7 @@ def meteo_sessioni(meteo, w):
 
 
 def prossimo_weekend(wk, adesso):
-    """Il weekend in corso o il prossimo: quello la cui gara non è finita da più di 12 ore."""
+    """Il weekend in corso o il prossimo: quello la cui gara è partita da meno di 14 ore."""
     for w in wk:
         t = ts(w["orari"]["Gara"])
         if t and t + 14 * 3600 > adesso:
@@ -195,7 +195,13 @@ def calcola(adesso=None, ritara=False):
             sk = w["sessioni"].get(ev)
             if sk in sess and sess[sk].get("risultato"):
                 continue   # già corsa
-            p = model.previsione_evento(contesto, w, ev, adesso, par, n_sim=8000, seed=w["round"])
+            try:
+                p = model.previsione_evento(contesto, w, ev, adesso, par, n_sim=8000, seed=w["round"])
+            except Exception as e:   # un dato strano di una fonte non deve fermare tutta la pagina
+                log(f"Pronostico {nome} non calcolato: {type(e).__name__}: {e}")
+                gh_note(f"Pronostico {nome} non calcolato: {type(e).__name__}: {e}", "warning")
+                STATO["errori"]["pronostico"] = f"{type(e).__name__}: {e}"
+                continue
             if not p["prev"]:
                 continue
             pron[nome] = {
@@ -225,10 +231,11 @@ def calcola(adesso=None, ritara=False):
         v = model.valuta(misure, adesso, wf["cittadino"])["piloti"]
         if w and wf["round"] == w["round"]:
             v, _ = model.aggiorna_con_weekend({"piloti": v}, misure, wf["round"], adesso)
-        return v
+        return model.solo_chi_corre(v, wf, sess, adesso)
 
     ritiro, base = model.prob_ritiro(st.get("risultati") or [], misure, 99)
-    titolo = model.simula_titolo(st, wk, val_futuro, storia, par, ritiro, base, n_sim=1500 if CLOUD else 2500)
+    titolo = model.simula_titolo(st, wk, val_futuro, storia, par, ritiro, base, n_sim=1500 if CLOUD else 2500,
+                                 misure=misure, sess=sess)
 
     colori = {}
     for p in stat["piloti"]:

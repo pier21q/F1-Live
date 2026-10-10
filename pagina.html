@@ -418,7 +418,7 @@ function vWeekend() {
   const seq = (S.sequenze || []).map(([s, n]) => `<div class="seq">${s.split("–").map(x => tyre(NOMI_SEQ[x] || x)).join('<span class="arr">→</span>')}<span class="small" style="margin-left:6px">${esc(s)}</span><span class="n">${n} volte</span></div>`).join("");
   h += `<h2>Strategia attesa <small>soste dei piloti arrivati al traguardo, gare qui dal 2023</small></h2><div class="cols"><section class="panel"><h3>Numero di soste</h3><div class="bars">${Object.entries(S.soste || {}).map(([k, v]) => `<div class="bar"><span class="small">${k == 0 ? "Nessuna sosta" : k == 3 ? "3 o più" : k + (k == 1 ? " sosta" : " soste")}</span><span class="tr"><i style="width:${v * 100}%;--c:var(--ink)"></i></span><span class="v">${pct(v)}</span></div>`).join("")}</div></section>
     <section class="panel"><h3>Ordine delle mescole più usato</h3>${seq || '<p class="muted">Nessun dato</p>'}
-    <div class="lab" style="margin:16px 0 8px">Degrado medio ${D.anno} · secondi persi a ogni giro di vita</div><div class="chips">${Object.entries(S.degrado || {}).filter(([m]) => TYRE[m]).map(([m, v]) => `<span class="pill" style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-stretch:100%;font-size:13px">${tyre(m)}<span class="mono">${num(v, 3)} s</span></span>`).join("")}</div></section></div>`;
+    <div class="lab" style="margin:16px 0 8px">Degrado medio ${D.anno} · secondi persi a ogni giro di vita</div><div class="chips">${Object.entries(S.degrado || {}).filter(([m]) => TYRE[m]).map(([m, v]) => `<span class="pill" style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-stretch:100%;font-size:13px">${tyre(m)}<span class="mono">${v < 0 ? "−" + num(-v, 3) : num(v, 3)} s</span></span>`).join("")}</div></section></div>`;
   if ((P.risultati || []).length) {
     const sel = Math.min(sub.sess ?? P.risultati.length - 1, P.risultati.length - 1);
     h += `<h2>Sessioni del weekend</h2><div class="seg" data-seg="sess">${P.risultati.map((r, i) => `<button data-i="${i}" aria-pressed="${i === sel}">${esc(r.nome)}</button>`).join("")}</div>` + tabSessione(P.risultati[sel]);
@@ -496,22 +496,30 @@ function vLive() {
 function vMondiale() {
   const T = D.titolo;
   const tit = Object.fromEntries((T ? T.piloti : []).map(x => [x.sigla, x]));
-  const cl = (D.piloti || []).filter(p => p.posizione).sort((a, b) => a.posizione - b.posizione);
+  const tc = Object.fromEntries((T ? T.costruttori : []).map(x => [x.squadra, x]));
+  // corse già finite che la classifica ufficiale non conta ancora: i loro punti sono già in quelli del titolo
+  const agg = (T && T.aggiunti) || [];
+  const ptP = p => agg.length && tit[p.sigla] ? tit[p.sigla].punti : p.punti;
+  const ptS = s => agg.length && tc[s.squadra] ? tc[s.squadra].punti : s.punti;
+  let cl = (D.piloti || []).filter(p => p.posizione).sort((a, b) => a.posizione - b.posizione);
+  if (agg.length) cl = [...cl].sort((a, b) => ptP(b) - ptP(a) || a.posizione - b.posizione);
+  const posP = (p, i) => agg.length ? i + 1 : p.posizione;   // a pari punti resta davanti chi lo è nella classifica ufficiale
+  const sq = [...(D.squadre || [])].sort((a, b) => ptS(b) - ptS(a) || a.posizione - b.posizione);
+  const notaAgg = agg.length ? `<p class="note">I punti comprendono già le corse finite che la classifica ufficiale non ha ancora aggiornato: ${esc(agg.join(", "))}.</p>` : "";
   const lead = cl[0], sec = cl[1];
   let h = "";
   if (T && lead) {
     const t1 = tit[lead.sigla];
     h += `<section class="hero" style="grid-template-columns:1fr;padding-bottom:0"><div><div class="eyebrow"><span class="lab">Mondiale piloti ${D.anno}</span></div>
       <h1 style="font-size:clamp(34px,6.6vw,64px)">${esc(nomeP(lead.sigla).split(" ").slice(-1)[0])} <span style="color:var(--red)">${pct(t1 ? t1.titolo : null, 1)}</span></h1>
-      <div class="sub">Probabilità di titolo per ${esc(nomeP(lead.sigla))}: ${num(lead.punti - (sec ? sec.punti : 0), 0)} punti di vantaggio su ${esc(sec ? nomeP(sec.sigla) : "–")}, con ${T.gare_rimaste} gare e ${T.sprint_rimaste} sprint da correre (${T.punti_in_palio} punti in palio).</div></div></section>`;
+      <div class="sub">Probabilità di titolo per ${esc(nomeP(lead.sigla))}: ${num(ptP(lead) - (sec ? ptP(sec) : 0), 0)} punti di vantaggio su ${esc(sec ? nomeP(sec.sigla) : "–")}, con ${T.gare_rimaste} ${T.gare_rimaste === 1 ? "gara" : "gare"}${T.sprint_rimaste ? ` e ${T.sprint_rimaste} sprint` : ""} da correre (${T.punti_in_palio} punti in palio).</div></div></section>`;
   }
   h += `<h2>Classifica piloti</h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Pilota</th><th>Punti</th><th>Distacco</th><th>Vittorie</th><th>Titolo</th><th>Punti finali attesi</th></tr></thead><tbody>` +
-    cl.map(p => { const t = tit[p.sigla]; return `<tr class="go" data-go="p-${esc(p.sigla)}"><td class="l">${pos(p.posizione)}</td><td class="l t">${drv(p.sigla, true)}</td><td><b>${num(p.punti, 0)}</b></td><td class="muted">${p.posizione > 1 ? "−" + num(lead.punti - p.punti, 0) : ""}</td><td>${p.vittorie}</td><td>${t ? pct(t.titolo, 1) + `<span class="mbar"><i style="width:${t.titolo * 100}%"></i></span>` : "–"}</td><td>${t ? num(t.finali, 0) : "–"}</td></tr>`; }).join("") +
-    `</tbody></table></div></section>`;
-  const tc = Object.fromEntries((T ? T.costruttori : []).map(x => [x.squadra, x]));
+    cl.map((p, i) => { const t = tit[p.sigla], n = posP(p, i); return `<tr class="go" data-go="p-${esc(p.sigla)}"><td class="l">${pos(n)}</td><td class="l t">${drv(p.sigla, true)}</td><td><b>${num(ptP(p), 0)}</b></td><td class="muted">${ptP(p) < ptP(lead) ? "−" + num(ptP(lead) - ptP(p), 0) : ""}</td><td>${p.vittorie}</td><td>${t ? pct(t.titolo, 1) + `<span class="mbar"><i style="width:${t.titolo * 100}%"></i></span>` : "–"}</td><td>${t ? num(t.finali, 0) : "–"}</td></tr>`; }).join("") +
+    `</tbody></table></div>${notaAgg}</section>`;
   h += `<h2>Classifica costruttori</h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Squadra</th><th>Punti</th><th>Vittorie</th><th>Titolo</th><th>Punti finali attesi</th></tr></thead><tbody>` +
-    (D.squadre || []).map(s => `<tr><td class="l">${pos(s.posizione)}</td><td class="l t">${team(s.squadra)}</td><td><b>${num(s.punti, 0)}</b></td><td>${s.vittorie}</td><td>${tc[s.squadra] ? pct(tc[s.squadra].titolo, 1) + `<span class="mbar"><i style="width:${tc[s.squadra].titolo * 100}%"></i></span>` : "–"}</td><td>${tc[s.squadra] ? num(tc[s.squadra].finali, 0) : "–"}</td></tr>`).join("") +
-    `</tbody></table></div><p class="note">Titolo: il resto della stagione simulato gara per gara (qualifica, gara, sprint, ritiri), con un piccolo sviluppo casuale di macchine e piloti a ogni gara. Sono compresi anche gli imprevisti rari: penalità in griglia per i cambi di motore (5% a gara per pilota, 10 posizioni), squalifiche o gare saltate (0,7%) e il margine d'errore sul passo stimato di ogni pilota.</p></section>`;
+    sq.map((s, i) => `<tr><td class="l">${pos(agg.length ? i + 1 : s.posizione)}</td><td class="l t">${team(s.squadra)}</td><td><b>${num(ptS(s), 0)}</b></td><td>${s.vittorie}</td><td>${tc[s.squadra] ? pct(tc[s.squadra].titolo, 1) + `<span class="mbar"><i style="width:${tc[s.squadra].titolo * 100}%"></i></span>` : "–"}</td><td>${tc[s.squadra] ? num(tc[s.squadra].finali, 0) : "–"}</td></tr>`).join("") +
+    `</tbody></table></div>${notaAgg}<p class="note">Titolo: il resto della stagione simulato gara per gara (qualifica, gara, sprint, ritiri), con un piccolo sviluppo casuale di macchine e piloti a ogni gara. Sono compresi anche gli imprevisti rari: penalità in griglia per i cambi di motore (5% a gara per pilota, 10 posizioni), squalifiche o gare saltate (0,7%) e il margine d'errore sul passo stimato di ogni pilota.</p></section>`;
   const ps = Object.entries((D.passo || {}).squadre || {}).filter(([, v]) => v.q != null || v.r != null).sort((a, b) => (a[1].r ?? a[1].q) - (b[1].r ?? b[1].q));
   const mx = Math.max(.5, ...ps.flatMap(([, v]) => [Math.abs(v.q || 0), Math.abs(v.r || 0)]));
   const bar = v => v == null ? "" : `<i style="left:${50 + Math.min(0, v) / mx * 50}%;width:${Math.abs(v) / mx * 50}%"></i>`;
@@ -570,9 +578,9 @@ function vSquadre() {
     const and = s.andamento || [];
     return `<section class="panel team" style="--c:${col(s.squadra)}"><h3>${esc(s.squadra)}<small>${s.posizione ?? "–"}° · ${num(s.punti, 0)} pt</small></h3>
       <div class="small muted">${s.piloti.map(x => `<a href="#p-${esc(x)}">${esc(nomeP(x))}</a>`).join(" · ")}</div>
-      <div class="kpis"><div class="kpi"><b>${segno(s.passo_q, 2)}%</b><span>passo qualifica</span></div><div class="kpi"><b>${segno(s.passo_r, 2)}%</b><span>passo gara</span></div><div class="kpi"><b>${s.vittorie}/${s.podi}</b><span>vittorie / podi</span></div><div class="kpi"><b>${s.ritiri}</b><span>ritiri</span></div><div class="kpi"><b>${s.pit != null ? num(s.pit, 2) : "–"}<small style="font-size:14px"> s</small></b><span>pit stop mediano${D.pit_medio ? ` (media ${num(D.pit_medio, 2)})` : ""}</span></div><div class="kpi"><b>${segno(s.velocita, 1)}</b><span>km/h di velocità di punta</span></div></div>
+      <div class="kpis"><div class="kpi"><b>${segno(s.passo_q, 2)}%</b><span>passo qualifica</span></div><div class="kpi"><b>${segno(s.passo_r, 2)}%</b><span>passo gara</span></div><div class="kpi"><b>${s.vittorie}/${s.podi}</b><span>vittorie / podi</span></div><div class="kpi"><b>${s.ritiri}</b><span>ritiri</span></div><div class="kpi"><b>${s.pit != null ? num(s.pit, 2) : "–"}<small style="font-size:14px"> s</small></b><span>pit stop mediano${D.pit_medio ? ` (${num(D.pit_medio, 2)} per tutto il gruppo)` : ""}</span></div><div class="kpi"><b>${segno(s.velocita, 1)}</b><span>km/h di velocità di punta</span></div></div>
       <div class="chips">${forte ? `<span class="pill">${forte}</span>` : ""}${citt ? `<span class="pill">${citt}</span>` : ""}</div>
-      ${Object.keys(s.degrado || {}).length ? `<div class="lab" style="margin:14px 0 6px">Degrado gomme · secondi per giro di vita</div><div class="chips">${Object.entries(s.degrado).filter(([m]) => TYRE[m]).map(([m, v]) => `<span class="pill" style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-stretch:100%;font-size:13px">${tyre(m)}<span class="mono">${num(v, 3)}</span>${dm[m] != null ? `<span class="${v < dm[m] ? "up" : "dn"}">${v < dm[m] ? "meglio" : "peggio"} della media</span>` : ""}</span>`).join("")}</div>` : ""}
+      ${Object.keys(s.degrado || {}).length ? `<div class="lab" style="margin:14px 0 6px">Degrado gomme · secondi per giro di vita</div><div class="chips">${Object.entries(s.degrado).filter(([m]) => TYRE[m]).map(([m, v]) => `<span class="pill" style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-stretch:100%;font-size:13px">${tyre(m)}<span class="mono">${v < 0 ? "−" + num(-v, 3) : num(v, 3)}</span>${dm[m] != null ? `<span class="${v < dm[m] ? "up" : "dn"}">${v < dm[m] ? "meglio" : "peggio"} della media</span>` : ""}</span>`).join("")}</div>` : ""}
       ${and.length > 1 ? `<div class="lab" style="margin:14px 0 4px">Velocità in qualifica gara per gara · in alto = più veloce</div>${spark(and.map(a => a[1] == null ? null : -a[1]), {inverti: false})}` : ""}
     </section>`;
   }).join("") + `</div><p class="note">Passo: distacco percentuale dalla mediana del gruppo (negativo = più veloce). Degrado: quanto si allunga il giro a ogni giro di vita della gomma, al netto del carburante che cala.</p>`;

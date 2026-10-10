@@ -20,7 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 ICONA = ROOT / "icona.png"
-CODICE = ["server.py", "model.py", "dati.py", "fonti.py", "sito.py", "pagina.html", "icona.png", "requirements.txt"]
+CODICE = ["server.py", "model.py", "dati.py", "fonti.py", "sito.py", "pagina.html", "icona.png", "favicon.png",
+          "requirements.txt"]
 CLOUD_FILES = {"cloud/aggiorna.yml": ".github/workflows/aggiorna.yml", "cloud/README.md": "README.md"}
 DATI = ["storico.json", "extra.json", "cache/stagione-*.json", "cache/circuiti.json", "cache/meteo.json",
         "cache/parametri.json", "cache/tracciati/*.json", "cache/sessioni/*.json"]
@@ -51,6 +52,8 @@ def prepara(site, foto):
     (site / "manifest.webmanifest").write_text(json.dumps(MANIFEST, ensure_ascii=False, indent=1))
     (site / ".nojekyll").write_text("")
     (site / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
+    if (ROOT / "favicon.png").exists():
+        shutil.copyfile(ROOT / "favicon.png", site / "favicon.png")
     for size in (180, 192, 512):
         out = site / f"icona-{size}.png"
         if not out.exists() and ICONA.exists():

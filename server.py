@@ -27,7 +27,7 @@ from fonti import Fonti, NonDisponibile, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-09"
+VERSIONE = "2026-10-10"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -701,10 +701,23 @@ async def h_versione(_):
 
 
 async def h_favicon(_):
+    """Icona della scheda del browser: «F1» bianco su rosso, disegnata per leggersi anche a 16 pixel."""
+    p = ROOT / "favicon.png"
+    if not p.exists():
+        raise web.HTTPNotFound()
+    return web.FileResponse(p, headers={"Cache-Control": "max-age=86400"})
+
+
+async def h_icona(_):
+    """Icona dell'app per la schermata Home e il manifest (le stesse che pubblica il sito)."""
     p = ROOT / "icona.png"
     if not p.exists():
         raise web.HTTPNotFound()
-    return web.FileResponse(p)
+    return web.FileResponse(p, headers={"Cache-Control": "max-age=86400"})
+
+
+async def h_manifest(_):
+    return web.json_response(sito.MANIFEST, content_type="application/manifest+json")
 
 
 async def versione_in_esecuzione():
@@ -740,6 +753,10 @@ async def main():
     app.router.add_get("/api/live", h_live)
     app.router.add_get("/api/versione", h_versione)
     app.router.add_get("/favicon.png", h_favicon)
+    app.router.add_get("/favicon.ico", h_favicon)
+    for n in (180, 192, 512):
+        app.router.add_get(f"/icona-{n}.png", h_icona)
+    app.router.add_get("/manifest.webmanifest", h_manifest)
     runner = web.AppRunner(app)
     await runner.setup()
     try:

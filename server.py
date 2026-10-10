@@ -27,7 +27,7 @@ from fonti import Fonti, NonDisponibile, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-10.2"
+VERSIONE = "2026-10-10.3"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -614,9 +614,15 @@ async def ciclo():
                     cambiato = False
                 prossimo_giro = adesso + (120 if s else 300)
                 if cambiato or adesso - ultimo_calcolo > 30 * 60:
-                    await asyncio.get_running_loop().run_in_executor(None, calcola)
+                    try:
+                        await asyncio.get_running_loop().run_in_executor(None, calcola)
+                        await pubblica_sito_dal_mac()
+                    except Exception as e:   # un dato strano di una fonte non deve chiudere l'app: si riprova al giro dopo
+                        log(f"Calcolo non riuscito: {type(e).__name__}: {e}")
+                        STATO["errori"]["calcolo"] = f"{type(e).__name__}: {e}"
+                    else:
+                        STATO["errori"].pop("calcolo", None)
                     ultimo_calcolo = time.time()
-                    await pubblica_sito_dal_mac()
             await asyncio.sleep(1 if s else 30)
 
 

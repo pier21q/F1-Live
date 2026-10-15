@@ -20,8 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 ICONA = ROOT / "icona.png"
-CODICE = ["server.py", "model.py", "dati.py", "fonti.py", "sito.py", "pagina.html", "icona.png", "favicon.png",
-          "requirements.txt"]
+CODICE = ["server.py", "model.py", "analisi.py", "dati.py", "fonti.py", "sito.py", "pagina.html", "icona.png",
+          "favicon.png", "requirements.txt"]
 CLOUD_FILES = {"cloud/aggiorna.yml": ".github/workflows/aggiorna.yml", "cloud/README.md": "README.md"}
 DATI = ["storico.json", "extra.json", "cache/stagione-*.json", "cache/circuiti.json", "cache/meteo.json",
         "cache/parametri.json", "cache/tracciati/*.json", "cache/sessioni/*.json"]
@@ -43,9 +43,14 @@ def riduci(src, dst, size):
         shutil.copyfile(src, dst)
 
 
-def prepara(site, foto):
-    """Scrive nella cartella del sito la pagina, i dati, le icone e il manifest (per la schermata Home)."""
+def prepara(site, foto, gare=None):
+    """Scrive nella cartella del sito la pagina, i dati, l'analisi di ogni round (gare/<round>.json), le icone e il
+    manifest (per la schermata Home)."""
     site.mkdir(parents=True, exist_ok=True)
+    if gare:
+        (site / "gare").mkdir(exist_ok=True)
+        for rd, a in gare.items():
+            (site / "gare" / f"{rd}.json").write_text(json.dumps(a, ensure_ascii=False, separators=(",", ":")))
     pagina = (ROOT / "pagina.html").read_text()
     (site / "index.html").write_text(pagina)
     (site / "dati.json").write_text(json.dumps(foto, ensure_ascii=False, separators=(",", ":")))

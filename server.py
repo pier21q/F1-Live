@@ -19,6 +19,7 @@ from pathlib import Path
 import aiohttp
 from aiohttp import web
 
+import analisi
 import dati
 import model
 import sito
@@ -27,7 +28,7 @@ from fonti import Fonti, NonDisponibile, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-10.3"
+VERSIONE = "2026-10-15"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -237,6 +238,34 @@ def calcola(adesso=None, ritara=False):
     titolo = model.simula_titolo(st, wk, val_futuro, storia, par, ritiro, base, n_sim=1500 if CLOUD else 2500,
                                  misure=misure, sess=sess)
 
+    # analisi di ogni round già corso: una pagina a sé, caricata solo quando si apre
+    tutte = []
+    for wx in wk:
+        try:
+            a = analisi.analisi_round(wx, sess, st)
+        except Exception as e:   # un dato strano di una sessione non deve fermare il resto
+            log(f"Analisi del round {wx['round']} non riuscita: {type(e).__name__}: {e}")
+            continue
+        if a:
+            tutte.append(a)
+    STATO["gare"] = {a["round"]: a for a in tutte}
+    squadra_cid = {}
+    for g in st.get("risultati") or []:
+        for x in g["Results"]:
+            sq = misure.squadra.get((int(g["round"]), x["Driver"].get("code")))
+            if sq:
+                squadra_cid[x["Constructor"]["constructorId"]] = sq
+    squadra_pil = {p["sigla"]: p["squadra"] for p in stat["piloti"]}
+    duelli = analisi.duelli(misure)
+    in_testa = {}
+    for a in tutte:
+        for r in (a.get("gara") or {}).get("righe", []):
+            in_testa[r["sigla"]] = in_testa.get(r["sigla"], 0) + r["in_testa"]
+    for p in stat["piloti"]:
+        p["duello"] = duelli.get(p["sigla"], [])
+        p["giri_in_testa"] = in_testa.get(p["sigla"], 0)
+    riepiloghi = [x for x in (analisi.riepilogo(a) for a in tutte) if x]
+
     colori = {}
     for p in stat["piloti"]:
         if p.get("colore") and p.get("squadra"):
@@ -248,6 +277,10 @@ def calcola(adesso=None, ritara=False):
         "pit_medio": stat["pit_medio"],
         "passo": {"squadre": {s: {k: model.r(v.get(k)) for k in ("q", "r", "adatt")} for s, v in val["squadre"].items()}},
         "storico": {"voci": storico[-80:], "riepilogo": model.riepilogo_storico(storico)},
+        "ultimo": riepiloghi[-1] if riepiloghi else None,
+        "gare_analizzate": sorted(STATO["gare"]),
+        "progressione": analisi.progressione(st, squadra_cid),
+        "record": analisi.record(tutte, squadra_pil),
         "modello": {"parametri": par, "tarato_su": par_file.get("eventi")},
         "fonti": {"errori": dict(STATO["errori"]), "stagione_at": st.get("at"),
                   "openf1_in_pausa": bool(STATO.get("openf1_in_pausa"))},
@@ -642,7 +675,7 @@ async def pubblica_sito_dal_mac():
 
     def lavoro():
         sito.collega(SITE_DIR, conf["remote"])
-        sito.prepara(SITE_DIR, foto)
+        sito.prepara(SITE_DIR, foto, STATO.get("gare"))
         return sito.pubblica(SITE_DIR, conf.get("branches") or ["sito"])
     ok, out = await asyncio.get_running_loop().run_in_executor(None, lavoro)
     log("Sito aggiornato su GitHub" if ok else f"Sito non aggiornato: {out[-200:]}")
@@ -659,7 +692,7 @@ async def cloud_main():
         return 1
     errori = dict(STATO["errori"])
     foto["fonti"]["errori"] = errori
-    sito.prepara(SITE_DIR, foto)
+    sito.prepara(SITE_DIR, foto, STATO.get("gare"))
     ok_s, out = sito.pubblica(SITE_DIR, ["sito"])
     log("Sito pubblicato" if ok_s else f"Sito non pubblicato: {out[-300:]}")
     if not ok_s:
@@ -707,6 +740,16 @@ async def h_dati(_):
 async def h_live(_):
     return web.json_response({"live": STATO.get("live"), "errori": STATO["errori"], "at": time.time()},
                              dumps=lambda o: json.dumps(o, ensure_ascii=False))
+
+
+async def h_gara(req):
+    try:
+        a = (STATO.get("gare") or {}).get(int(req.match_info["rd"]))
+    except ValueError:
+        a = None
+    if not a:
+        raise web.HTTPNotFound()
+    return web.json_response(a, dumps=lambda o: json.dumps(o, ensure_ascii=False, separators=(",", ":")))
 
 
 async def h_versione(_):
@@ -764,6 +807,7 @@ async def main():
     app.router.add_get("/", h_index)
     app.router.add_get("/api/dati", h_dati)
     app.router.add_get("/api/live", h_live)
+    app.router.add_get("/api/gara/{rd}", h_gara)
     app.router.add_get("/api/versione", h_versione)
     app.router.add_get("/favicon.png", h_favicon)
     app.router.add_get("/favicon.ico", h_favicon)

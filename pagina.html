@@ -238,6 +238,67 @@ svg.track .car{fill:var(--red)}
 
 footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);max-width:76ch}
 
+
+/* ---- foto dei piloti (da OpenF1), con il colore della squadra */
+.face{width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:50% 12%;background:color-mix(in srgb,var(--c,#888) 30%,var(--sunk));border:2px solid var(--c,#888);flex:none;display:inline-block}
+.drv .face{width:26px;height:26px}
+.face.m{width:52px;height:52px}
+.coppia{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px}
+.coppia a{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-weight:600;font-size:14px}
+.coppia a:hover span{color:var(--red)}
+.hero-foto{justify-self:end;width:min(100%,280px);aspect-ratio:1;max-width:100%;border-radius:50%;overflow:hidden;display:grid;align-items:end;justify-items:center;text-decoration:none;
+  background:radial-gradient(circle at 50% 72%,color-mix(in srgb,var(--c) 80%,transparent) 0,color-mix(in srgb,var(--c) 28%,transparent) 55%,transparent 71%)}
+.hero-foto img{width:94%;height:auto;display:block}
+@media (max-width:760px){.hero-foto{justify-self:center;width:210px}}
+
+/* ---- podio */
+.podio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}
+.pc{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:180px;border-radius:6px;overflow:hidden;text-decoration:none;color:#fff;isolation:isolate;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 92%,#fff),color-mix(in srgb,var(--c) 58%,#05060a))}
+.pc.p1{min-height:224px}
+.pc::before{content:"";position:absolute;inset:0;z-index:-2;background:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 2px,transparent 2px 10px)}
+.pc img{position:absolute;right:-4%;bottom:0;width:84%;height:auto;max-width:none;z-index:-1;filter:drop-shadow(0 8px 14px rgba(0,0,0,.35));transition:transform .25s}
+.pc:hover img{transform:translateY(-4px)}
+.pc .n{position:absolute;top:6px;left:12px;font-family:var(--display);font-stretch:125%;font-style:italic;font-weight:900;font-size:46px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.3)}
+.pc .who{display:grid;gap:1px;padding:30px 12px 10px;background:linear-gradient(transparent,rgba(5,6,10,.74) 45%)}
+.pc .who b{font-family:var(--display);font-stretch:118%;font-style:italic;font-weight:800;font-size:clamp(14px,2.6vw,20px);text-transform:uppercase;line-height:1.05;overflow-wrap:anywhere}
+.pc .who small{font-size:11.5px;opacity:.85}
+.pc .who .mono{font-size:12px}
+.more{display:inline-block;margin-top:14px;font-stretch:75%;font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);text-decoration:none}
+.more:hover{text-decoration:underline}
+.pill.plain{text-transform:none;letter-spacing:0;font-stretch:100%;font-weight:500;font-size:12.5px;padding:3px 9px}
+.pill.plain b{font-weight:700;color:var(--ink)}
+
+/* ---- grafici */
+svg.chart{display:block;width:100%;height:auto;min-width:660px;overflow:visible}
+svg.chart .gl{stroke:var(--line);stroke-width:1}
+svg.chart .ax{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+svg.chart .lbl{font-family:var(--body);font-stretch:112%;font-weight:800;font-size:11.5px;fill:var(--ink2);cursor:pointer}
+svg.chart .ln{cursor:pointer}
+svg.chart .lbl.rit{font-size:10px}
+svg.chart .nz.sc{fill:#F5C518;opacity:.24}
+svg.chart .nz.vsc{fill:#F5C518;opacity:.11}
+svg.chart .nz.rossa{fill:var(--red);opacity:.16}
+svg.chart .nzt{font-family:var(--mono);font-size:10px;font-weight:600;fill:var(--amber)}
+svg.chart .tl{font-family:var(--mono);font-size:10.5px;font-weight:600}
+svg.chart .st{stroke:var(--surface);stroke-width:1}
+svg.chart .meglio{fill:var(--green)}
+svg.chart .peggio{fill:var(--down);opacity:.85}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.legend button{font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:3px;padding:3px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.legend button i{width:12px;height:3px;background:var(--c)}
+.legend button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--surface)}
+
+/* ---- record */
+.rec{display:grid}
+.rec a{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line);text-decoration:none}
+.rec a:last-child{border-bottom:0}
+.rec a:hover{background:color-mix(in srgb,var(--sunk) 55%,transparent)}
+.rec .k{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+.rec a > span:nth-child(2){display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;min-width:0}
+.rec .v{font-family:var(--mono);font-weight:600;font-size:14px;white-space:nowrap}
+.rec .first .v{color:var(--purple)}
+
 @media (max-width:560px){
   .bar{grid-template-columns:minmax(0,96px) 1fr 46px}
   .diverge{grid-template-columns:minmax(0,96px) 1fr 1fr}
@@ -287,9 +348,9 @@ const NOMI_SEQ = {"Morbida": "SOFT", "Media": "MEDIUM", "Dura": "HARD", "Interme
 let D = null, LIVE = null, MAC = false, view = "weekend", sub = {};
 let PIL = {};
 const col = sq => (D.colori || {})[sq] || "#888";
-function drv(s, conSquadra = false) {
+function drv(s, conSquadra = false, conFoto = false) {
   const p = PIL[s] || {};
-  return `<span class="drv" style="--c:${col(p.squadra)}"><i class="liv"></i><b>${esc(s)}</b>${conSquadra && p.squadra ? `<small>${esc(p.squadra)}</small>` : ""}</span>`;
+  return `<span class="drv" style="--c:${col(p.squadra)}">${conFoto ? faccia(s) : '<i class="liv"></i>'}<b>${esc(s)}</b>${conSquadra && p.squadra ? `<small>${esc(p.squadra)}</small>` : ""}</span>`;
 }
 const team = sq => `<span class="drv" style="--c:${col(sq)}"><i class="liv"></i><b style="font-stretch:100%;font-weight:700">${esc(sq)}</b></span>`;
 // OpenF1 scrive i cognomi in maiuscolo («Kimi ANTONELLI»): si riportano in forma normale
@@ -315,7 +376,7 @@ async function caricaLive() {
 }
 
 // ------------------------------------------------------------------ navigazione
-const VIEWS = [["weekend", "Weekend"], ["pronostico", "Pronostico"], ["live", "Live"], ["mondiale", "Mondiale"], ["piloti", "Piloti"], ["squadre", "Squadre"], ["calendario", "Calendario"], ["storico", "Storico"]];
+const VIEWS = [["weekend", "Weekend"], ["pronostico", "Pronostico"], ["live", "Live"], ["mondiale", "Mondiale"], ["piloti", "Piloti"], ["squadre", "Squadre"], ["calendario", "Calendario"], ["record", "Record"], ["storico", "Storico"]];
 function nav() {
   const cur = view.split("-")[0];
   const attivo = k => cur === k || (k === "piloti" && cur === "p") || (k === "calendario" && cur === "r");
@@ -333,7 +394,7 @@ function render() {
   view = location.hash.slice(1) || "weekend";
   nav(); stamp();
   const v = view.split("-")[0], arg = view.split("-").slice(1).join("-");
-  const f = {weekend: vWeekend, live: vLive, pronostico: vPronostico, mondiale: vMondiale, piloti: vPiloti, p: () => vPilota(arg), squadre: vSquadre, calendario: vCalendario, r: () => vRound(+arg), storico: vStorico}[v] || vWeekend;
+  const f = {weekend: vWeekend, live: vLive, pronostico: vPronostico, mondiale: vMondiale, piloti: vPiloti, p: () => vPilota(arg), squadre: vSquadre, calendario: vCalendario, r: () => vRound(+arg), record: vRecord, storico: vStorico}[v] || vWeekend;
   $("#main").innerHTML = f() + footer();
   bind();
   tick();
@@ -397,6 +458,8 @@ function vWeekend() {
       <div class="sub">${esc(P.circuito)} · ${esc(P.luogo)}, ${esc(P.paese)} · ${P.cittadino ? "circuito cittadino" : "circuito permanente"}</div>
       <div class="cd" id="cd"></div>
     </div><div>${tracciato(P.tracciato)}</div></section>`;
+  const recap = ultimoGP(P);
+  if (recap && !(P.risultati || []).length) h += recap;
   // programma
   let giorni = "", ultimo = "";
   for (const [n, t] of orari) {
@@ -422,8 +485,18 @@ function vWeekend() {
   if ((P.risultati || []).length) {
     const sel = Math.min(sub.sess ?? P.risultati.length - 1, P.risultati.length - 1);
     h += `<h2>Sessioni del weekend</h2><div class="seg" data-seg="sess">${P.risultati.map((r, i) => `<button data-i="${i}" aria-pressed="${i === sel}">${esc(r.nome)}</button>`).join("")}</div>` + tabSessione(P.risultati[sel]);
+    if (recap) h += recap;
   }
   return h;
+}
+function ultimoGP(P) {
+  const U = D.ultimo;
+  if (!U) return "";
+  const qui = P && U.round === P.round;
+  const chips = [U.pole ? `Pole <b>${esc(U.pole)}</b>` : "", U.giro_veloce ? `Giro veloce <b>${esc(U.giro_veloce[0])}</b> ${tempo(U.giro_veloce[1])}` : "",
+    `<b>${U.sorpassi}</b> sorpassi`, U.ritirati ? `<b>${U.ritirati}</b> ritirati` : "", U.sc ? `<b>${U.sc}</b> safety car` : "", U.vsc ? `<b>${U.vsc}</b> virtual safety car` : "",
+    U.rosse ? `<b>${U.rosse}</b> ${U.rosse === 1 ? "bandiera rossa" : "bandiere rosse"}` : "", U.rimonta ? `Rimonta di <b>${esc(U.rimonta[0])}</b>: da ${U.rimonta[1]}° a ${U.rimonta[2]}°` : ""].filter(Boolean);
+  return `<h2>${qui ? "Risultato della gara" : "Ultimo GP · " + esc(U.nome)} <small>${esc(giornoLungo(iso2t(U.data)))}</small></h2><section class="panel recap">${podio(U.podio)}<div class="chips" style="margin-top:12px">${chips.map(c => `<span class="pill plain">${c}</span>`).join("")}</div><a class="more" href="#r-${U.round}">Analisi completa: posizioni giro per giro, gomme, pit stop, qualifica →</a></section>`;
 }
 function tabSessione(R) {
   const gara = R.nome === "Gara" || R.nome === "Sprint";
@@ -510,12 +583,21 @@ function vMondiale() {
   let h = "";
   if (T && lead) {
     const t1 = tit[lead.sigla];
-    h += `<section class="hero" style="grid-template-columns:1fr;padding-bottom:0"><div><div class="eyebrow"><span class="lab">Mondiale piloti ${D.anno}</span></div>
+    h += `<section class="hero" style="padding-bottom:0"><div><div class="eyebrow"><span class="lab">Mondiale piloti ${D.anno}</span></div>
       <h1 style="font-size:clamp(34px,6.6vw,64px)">${esc(nomeP(lead.sigla).split(" ").slice(-1)[0])} <span style="color:var(--red)">${pct(t1 ? t1.titolo : null, 1)}</span></h1>
-      <div class="sub">Probabilità di titolo per ${esc(nomeP(lead.sigla))}: ${num(ptP(lead) - (sec ? ptP(sec) : 0), 0)} punti di vantaggio su ${esc(sec ? nomeP(sec.sigla) : "–")}, con ${T.gare_rimaste} ${T.gare_rimaste === 1 ? "gara" : "gare"}${T.sprint_rimaste ? ` e ${T.sprint_rimaste} sprint` : ""} da correre (${T.punti_in_palio} punti in palio).</div></div></section>`;
+      <div class="sub">Probabilità di titolo per ${esc(nomeP(lead.sigla))}: ${num(ptP(lead) - (sec ? ptP(sec) : 0), 0)} punti di vantaggio su ${esc(sec ? nomeP(sec.sigla) : "–")}, con ${T.gare_rimaste} ${T.gare_rimaste === 1 ? "gara" : "gare"}${T.sprint_rimaste ? ` e ${T.sprint_rimaste} sprint` : ""} da correre (${T.punti_in_palio} punti in palio).</div></div>${fotoUrl(lead.sigla, 4) ? `<a class="hero-foto" href="#p-${esc(lead.sigla)}" style="--c:${col(lead.squadra)}"><img src="${esc(fotoUrl(lead.sigla, 4))}" alt="${esc(nomeP(lead.sigla))}"></a>` : ""}</section>`;
+  }
+  const PR = D.progressione;
+  if (PR && PR.round.length > 1) {
+    const quali = sub.prog === "squadre" ? "squadre" : "piloti", serie = PR[quali];
+    const ult = k => serie[k][serie[k].length - 1];
+    const chi = Object.keys(serie).sort((a, b) => ult(b) - ult(a)).slice(0, quali === "piloti" ? 8 : 6);
+    const visti = {}, dash = {};
+    if (quali === "piloti") chi.forEach(k => { const t = (PIL[k] || {}).squadra; dash[k] = visti[t] ? "6 4" : ""; visti[t] = 1; });
+    h += `<h2>Corsa al titolo <small>punti dopo ogni round · tratteggiato il secondo pilota della squadra</small></h2><div class="seg" data-seg="prog"><button data-v="piloti" aria-pressed="${quali === "piloti"}">Piloti</button><button data-v="squadre" aria-pressed="${quali === "squadre"}">Costruttori</button></div><section class="panel">${graficoPunti(serie, chi, k => quali === "piloti" ? col((PIL[k] || {}).squadra) : col(k), k => dash[k] || "", PR.round)}<p class="note">Sotto: il numero del round. Gara e sprint dello stesso weekend sono sommati.</p></section>`;
   }
   h += `<h2>Classifica piloti</h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Pilota</th><th>Punti</th><th>Distacco</th><th>Vittorie</th><th>Titolo</th><th>Punti finali attesi</th></tr></thead><tbody>` +
-    cl.map((p, i) => { const t = tit[p.sigla], n = posP(p, i); return `<tr class="go" data-go="p-${esc(p.sigla)}"><td class="l">${pos(n)}</td><td class="l t">${drv(p.sigla, true)}</td><td><b>${num(ptP(p), 0)}</b></td><td class="muted">${ptP(p) < ptP(lead) ? "−" + num(ptP(lead) - ptP(p), 0) : ""}</td><td>${p.vittorie}</td><td>${t ? pct(t.titolo, 1) + `<span class="mbar"><i style="width:${t.titolo * 100}%"></i></span>` : "–"}</td><td>${t ? num(t.finali, 0) : "–"}</td></tr>`; }).join("") +
+    cl.map((p, i) => { const t = tit[p.sigla], n = posP(p, i); return `<tr class="go" data-go="p-${esc(p.sigla)}"><td class="l">${pos(n)}</td><td class="l t">${drv(p.sigla, true, true)}</td><td><b>${num(ptP(p), 0)}</b></td><td class="muted">${ptP(p) < ptP(lead) ? "−" + num(ptP(lead) - ptP(p), 0) : ""}</td><td>${p.vittorie}</td><td>${t ? pct(t.titolo, 1) + `<span class="mbar"><i style="width:${t.titolo * 100}%"></i></span>` : "–"}</td><td>${t ? num(t.finali, 0) : "–"}</td></tr>`; }).join("") +
     `</tbody></table></div>${notaAgg}</section>`;
   h += `<h2>Classifica costruttori</h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Squadra</th><th>Punti</th><th>Vittorie</th><th>Titolo</th><th>Punti finali attesi</th></tr></thead><tbody>` +
     sq.map((s, i) => `<tr><td class="l">${pos(agg.length ? i + 1 : s.posizione)}</td><td class="l t">${team(s.squadra)}</td><td><b>${num(ptS(s), 0)}</b></td><td>${s.vittorie}</td><td>${tc[s.squadra] ? pct(tc[s.squadra].titolo, 1) + `<span class="mbar"><i style="width:${tc[s.squadra].titolo * 100}%"></i></span>` : "–"}</td><td>${tc[s.squadra] ? num(tc[s.squadra].finali, 0) : "–"}</td></tr>`).join("") +
@@ -536,7 +618,7 @@ function vPiloti() {
   const val = (p, c) => Array.isArray(p[c]) ? p[c][0] - p[c][1] : p[c];
   const ps = [...D.piloti].filter(p => p.gare).sort((a, b) => { const x = val(a, k), y = val(b, k); if (x == null) return 1; if (y == null) return -1; return (x - y) * dir; });
   return `<h2>Piloti <small>stagione ${D.anno} · tocca un'intestazione per ordinare, una riga per la scheda</small></h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pilota</th>${COLS.map(([c, n]) => `<th class="sort" data-sort="${c}" ${k === c ? 'aria-sort="' + (dir < 0 ? "descending" : "ascending") + '"' : ""}>${n}${k === c ? (dir < 0 ? " ↓" : " ↑") : ""}</th>`).join("")}</tr></thead><tbody>` +
-    ps.map(p => `<tr class="go" data-go="p-${esc(p.sigla)}"><td class="l t">${drv(p.sigla, true)}</td>${COLS.map(([c, , nd]) => {
+    ps.map(p => `<tr class="go" data-go="p-${esc(p.sigla)}"><td class="l t">${drv(p.sigla, true, true)}</td>${COLS.map(([c, , nd]) => {
       if (nd === -1) return `<td>${p[c] ? `<span class="${p[c][0] > p[c][1] ? "up" : p[c][0] < p[c][1] ? "dn" : ""}">${p[c][0]}–${p[c][1]}</span>` : "–"}</td>`;
       if (c === "guadagnate" || c === "velocita") return `<td class="${p[c] > 0 ? "up" : p[c] < 0 ? "dn" : ""}">${segno(p[c], nd)}</td>`;
       if (c === "passo_r") return `<td>${segno(p[c], nd)}</td>`;
@@ -559,10 +641,19 @@ function vPilota(s) {
   const p = PIL[s];
   if (!p) return `<div class="empty">Pilota non trovato.</div>`;
   const tit = ((D.titolo || {}).piloti || []).find(x => x.sigla === s);
-  let h = `<a class="back" href="#piloti">← Tutti i piloti</a><section class="hero" style="grid-template-columns:1fr;padding-top:14px"><div class="prof" style="--c:${col(p.squadra)}"><div class="racenum">${esc(p.numero || "")}</div><div><div class="lab" style="color:${col(p.squadra)}">${esc(p.squadra || "")}</div><h1>${esc(nomeP(s))}</h1><div class="sub">${p.posizione ? `${p.posizione}° nel mondiale con ${num(p.punti, 0)} punti` : ""}${tit ? ` · titolo ${pct(tit.titolo, 1)}` : ""}</div></div></div></section>
-    <div class="kpis"><div class="kpi"><b>${p.vittorie}</b><span>vittorie</span></div><div class="kpi"><b>${p.podi}</b><span>podi</span></div><div class="kpi"><b>${p.pole}</b><span>pole</span></div><div class="kpi"><b>${num(p.media_qualifica, 1)}</b><span>media in qualifica</span></div><div class="kpi"><b>${num(p.media_arrivo, 1)}</b><span>media all'arrivo</span></div><div class="kpi"><b>${segno(p.guadagnate, 1)}</b><span>posizioni guadagnate a gara</span></div><div class="kpi"><b>${p.ritiri}</b><span>ritiri</span></div><div class="kpi"><b>${p.h2h_q[0]}–${p.h2h_q[1]}</b><span>in qualifica sul compagno</span></div><div class="kpi"><b>${segno(p.gap_compagno, 2)}%</b><span>dal compagno in qualifica</span></div><div class="kpi"><b>${segno(p.passo_r, 2)}%</b><span>passo gara</span></div><div class="kpi"><b>${p.sorpassi}</b><span>sorpassi (${p.sorpassato} subiti)</span></div><div class="kpi"><b>${p.giri_veloci}</b><span>giri più veloci</span></div></div>`;
+  let h = `<a class="back" href="#piloti">← Tutti i piloti</a><section class="hero" style="padding-top:14px"><div class="prof" style="--c:${col(p.squadra)}"><div class="racenum">${esc(p.numero || "")}</div><div><div class="lab" style="color:${col(p.squadra)}">${esc(p.squadra || "")}</div><h1>${esc(nomeP(s))}</h1><div class="sub">${p.posizione ? `${p.posizione}° nel mondiale con ${num(p.punti, 0)} punti` : ""}${tit ? ` · titolo ${pct(tit.titolo, 1)}` : ""}</div></div></div>${fotoUrl(s, 4) ? `<div class="hero-foto" style="--c:${col(p.squadra)}"><img src="${esc(fotoUrl(s, 4))}" alt="${esc(nomeP(s))}"></div>` : ""}</section>
+    <div class="kpis"><div class="kpi"><b>${p.vittorie}</b><span>vittorie</span></div><div class="kpi"><b>${p.podi}</b><span>podi</span></div><div class="kpi"><b>${p.pole}</b><span>pole</span></div><div class="kpi"><b>${num(p.media_qualifica, 1)}</b><span>media in qualifica</span></div><div class="kpi"><b>${num(p.media_arrivo, 1)}</b><span>media all'arrivo</span></div><div class="kpi"><b>${segno(p.guadagnate, 1)}</b><span>posizioni guadagnate a gara</span></div><div class="kpi"><b>${p.ritiri}</b><span>ritiri</span></div><div class="kpi"><b>${p.h2h_q[0]}–${p.h2h_q[1]}</b><span>in qualifica sul compagno</span></div><div class="kpi"><b>${segno(p.gap_compagno, 2)}%</b><span>dal compagno in qualifica</span></div><div class="kpi"><b>${segno(p.passo_r, 2)}%</b><span>passo gara</span></div><div class="kpi"><b>${p.sorpassi}</b><span>sorpassi (${p.sorpassato} subiti)</span></div><div class="kpi"><b>${p.giri_veloci}</b><span>giri più veloci</span></div><div class="kpi"><b>${p.giri_in_testa ?? 0}</b><span>giri in testa</span></div></div>`;
+  const PR = D.progressione, comp = (D.piloti || []).find(x => x.squadra === p.squadra && x.sigla !== s && x.gare);
+  if (PR && PR.piloti[s] && PR.round.length > 1) {
+    const chi = [s].concat(comp && PR.piloti[comp.sigla] ? [comp.sigla] : []);
+    h += `<h2>Punti nella stagione${comp ? ` <small>contro il compagno ${esc(nomeP(comp.sigla))}</small>` : ""}</h2><section class="panel">${graficoPunti(PR.piloti, chi, k => k === s ? col(p.squadra) : "var(--muted)", k => k === s ? "" : "6 4", PR.round)}</section>`;
+  }
+  if ((p.duello || []).length) {
+    const davanti = p.duello.filter(d => d[1] < 0).length;
+    h += `<h2>Duello col compagno in qualifica <small>davanti ${davanti} volte su ${p.duello.length} · barre in alto = più veloce</small></h2><section class="panel">${graficoDuello(p.duello)}</section>`;
+  }
   h += `<h2>Gara per gara</h2><section class="panel"><div class="lab" style="margin-bottom:6px">Posizione d'arrivo · i buchi sono ritiri</div>${spark(p.gare_elenco.map(g => g.pos))}<div class="tw" style="margin-top:12px"><table><thead><tr><th class="l">Rd</th><th class="l">Gran Premio</th><th>Griglia</th><th>Arrivo</th><th>+/−</th><th>Punti</th></tr></thead><tbody>` +
-    p.gare_elenco.map(g => { const dlt = g.pos && g.griglia ? g.griglia - g.pos : null; return `<tr class="go" data-go="r-${g.round}"><td class="l">${g.round}</td><td class="l t">${esc(g.gp)}</td><td>${g.griglia || "box"}</td><td>${g.pos ? pos(g.pos) : `<span class="pill">${esc(g.stato)}</span>`}</td><td class="${dlt > 0 ? "up" : dlt < 0 ? "dn" : "muted"}">${dlt == null ? "" : dlt > 0 ? "+" + dlt : dlt < 0 ? "−" + -dlt : "="}</td><td>${g.punti || ""}</td></tr>`; }).join("") +
+    p.gare_elenco.map(g => { const dlt = g.pos && g.griglia ? g.griglia - g.pos : null; return `<tr class="go" data-go="r-${g.round}"><td class="l">${g.round}</td><td class="l t">${esc(g.gp)}</td><td>${g.griglia || "box"}</td><td>${g.pos ? pos(g.pos) : `<span class="pill">${esc(statoIt(g.stato))}</span>`}</td><td class="${dlt > 0 ? "up" : dlt < 0 ? "dn" : "muted"}">${dlt == null ? "" : dlt > 0 ? "+" + dlt : dlt < 0 ? "−" + -dlt : "="}</td><td>${g.punti || ""}</td></tr>`; }).join("") +
     `</tbody></table></div></section>`;
   const prox = D.prossimo ? Object.entries(D.prossimo.pronostici || {}).map(([n, x]) => [n, x.piloti.find(y => y.sigla === s)]).filter(x => x[1]) : [];
   if (prox.length) h += `<h2>${esc(D.prossimo.nome)} <small>pronostico</small></h2><div class="kpis">${prox.map(([n, y]) => `<div class="kpi"><b>${pct(y.vince)}</b><span>vittoria ${esc(n.toLowerCase())}</span></div><div class="kpi"><b>${pct(y.podio)}</b><span>podio ${esc(n.toLowerCase())}</span></div><div class="kpi"><b>${num(y.pos, 1)}</b><span>posizione attesa ${esc(n.toLowerCase())}</span></div>`).join("")}</div>`;
@@ -577,7 +668,7 @@ function vSquadre() {
     const citt = s.cittadini == null ? "" : s.cittadini < -.05 ? "Meglio sui circuiti cittadini" : s.cittadini > .05 ? "Meglio sui circuiti permanenti" : "Uguale su cittadini e permanenti";
     const and = s.andamento || [];
     return `<section class="panel team" style="--c:${col(s.squadra)}"><h3>${esc(s.squadra)}<small>${s.posizione ?? "–"}° · ${num(s.punti, 0)} pt</small></h3>
-      <div class="small muted">${s.piloti.map(x => `<a href="#p-${esc(x)}">${esc(nomeP(x))}</a>`).join(" · ")}</div>
+      <div class="coppia">${s.piloti.map(x => `<a href="#p-${esc(x)}">${faccia(x, 2, "m")}<span>${esc(nomeP(x))}</span></a>`).join("")}</div>
       <div class="kpis"><div class="kpi"><b>${segno(s.passo_q, 2)}%</b><span>passo qualifica</span></div><div class="kpi"><b>${segno(s.passo_r, 2)}%</b><span>passo gara</span></div><div class="kpi"><b>${s.vittorie}/${s.podi}</b><span>vittorie / podi</span></div><div class="kpi"><b>${s.ritiri}</b><span>ritiri</span></div><div class="kpi"><b>${s.pit != null ? num(s.pit, 2) : "–"}<small style="font-size:14px"> s</small></b><span>pit stop mediano${D.pit_medio ? ` (${num(D.pit_medio, 2)} per tutto il gruppo)` : ""}</span></div><div class="kpi"><b>${segno(s.velocita, 1)}</b><span>km/h di velocità di punta</span></div></div>
       <div class="chips">${forte ? `<span class="pill">${forte}</span>` : ""}${citt ? `<span class="pill">${citt}</span>` : ""}</div>
       ${Object.keys(s.degrado || {}).length ? `<div class="lab" style="margin:14px 0 6px">Degrado gomme · secondi per giro di vita</div><div class="chips">${Object.entries(s.degrado).filter(([m]) => TYRE[m]).map(([m, v]) => `<span class="pill" style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-stretch:100%;font-size:13px">${tyre(m)}<span class="mono">${v < 0 ? "−" + num(-v, 3) : num(v, 3)}</span>${dm[m] != null ? `<span class="${v < dm[m] ? "up" : "dn"}">${v < dm[m] ? "meglio" : "peggio"} della media</span>` : ""}</span>`).join("")}</div>` : ""}
@@ -592,19 +683,9 @@ function vCalendario() {
   const prox = (D.calendario || []).find(r => iso2t(r.orari.Gara) + 14 * 3600 > now);
   return `<h2>Calendario ${D.anno} <small>${(D.calendario || []).filter(r => r.vincitore).length} gare corse su ${(D.calendario || []).length}</small></h2><section>` + (D.calendario || []).map(r => {
     const t = iso2t(r.orari.Gara), fatto = !!r.vincitore, next = prox && prox.round === r.round;
-    return `<a class="cal ${fatto ? "done" : ""} ${next ? "next" : ""}" href="${fatto ? "#r-" + r.round : next ? "#weekend" : "#calendario"}"><span class="r">${r.round}</span><span style="min-width:0"><span class="g">${esc(r.nome)}</span> ${r.sprint ? '<span class="pill sprint">Sprint</span>' : ""}<br><span class="small muted">${esc(r.circuito)} · <span class="mono">${quando(t)}</span></span></span><span class="w">${fatto ? `${drv(r.vincitore)}<span class="small muted">pole ${esc(r.pole || "–")}${r.sprint_vincitore ? " · sprint " + esc(r.sprint_vincitore) : ""}</span>` : next ? '<span class="pill on">Prossimo</span>' : ""}</span></a>`;
+    return `<a class="cal ${fatto ? "done" : ""} ${next ? "next" : ""}" href="${fatto ? "#r-" + r.round : next ? "#weekend" : "#calendario"}"><span class="r">${r.round}</span><span style="min-width:0"><span class="g">${esc(r.nome)}</span> ${r.sprint ? '<span class="pill sprint">Sprint</span>' : ""}<br><span class="small muted">${esc(r.circuito)} · <span class="mono">${quando(t)}</span></span></span><span class="w">${fatto ? `${drv(r.vincitore, false, true)}<span class="small muted">pole ${esc(r.pole || "–")}${r.sprint_vincitore ? " · sprint " + esc(r.sprint_vincitore) : ""}</span>` : next ? '<span class="pill on">Prossimo</span>' : ""}</span></a>`;
   }).join("") + `</section>`;
 }
-function vRound(n) {
-  const r = (D.calendario || []).find(x => x.round === n);
-  if (!r) return `<div class="empty">Gara non trovata.</div>`;
-  const pv = (((D.storico || {}).voci || []).find(v => v.round === n && v.evento === "Race") || {}).prev || null;
-  let h = `<a class="back" href="#calendario">← Calendario</a><section class="hero" style="grid-template-columns:1fr;padding-top:14px"><div><div class="eyebrow"><span class="lab">Round ${r.round} · ${esc(quando(iso2t(r.orari.Gara)))}</span></div><h1 style="font-size:clamp(34px,6.6vw,64px)">${esc(r.nome)}</h1><div class="sub">${esc(r.circuito)}</div></div></section>`;
-  h += `<section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Pilota</th><th>Griglia</th><th>+/−</th><th class="l">Esito</th><th>Punti</th>${pv ? "<th>Podio previsto</th>" : ""}</tr></thead><tbody>` +
-    r.arrivo.map(([p, s, g, stato, pt]) => { const fin = stato === "Finished" || stato === "Lapped" || stato.startsWith("+"); const dlt = fin && g ? g - p : null; return `<tr class="go" data-go="p-${esc(s)}"><td class="l">${pos(p)}</td><td class="l t">${drv(s, true)}</td><td>${g || "box"}</td><td class="${dlt > 0 ? "up" : dlt < 0 ? "dn" : "muted"}">${dlt == null ? "" : dlt > 0 ? "+" + dlt : dlt < 0 ? "−" + -dlt : "="}</td><td class="l">${stato === "Finished" ? "" : `<span class="pill">${esc(stato === "Lapped" ? "doppiato" : stato)}</span>`}</td><td>${pt || ""}</td>${pv ? `<td>${pv[s] ? pct(pv[s][1]) : "–"}</td>` : ""}</tr>`; }).join("");
-  return h + `</tbody></table></div></section>`;
-}
-
 // ------------------------------------------------------------------ storico
 function vStorico() {
   const S = D.storico || {}, R = S.riepilogo || {};
@@ -627,12 +708,201 @@ function vStorico() {
   return h;
 }
 
+// ------------------------------------------------------------------ foto e grafici
+// le foto dei piloti vengono da OpenF1; lo stesso indirizzo esiste in più misure (1col 93 px, 2col 206, 4col 432)
+const fotoUrl = (s, k = 1) => { const u = (PIL[s] || {}).foto; return u ? (k > 1 ? u.replace("/1col/", `/${k}col/`) : u) : null; };
+function faccia(s, k = 1, cls = "") {
+  const u = fotoUrl(s, k), c = col((PIL[s] || {}).squadra);
+  return u ? `<img class="face ${cls}" src="${esc(u)}" alt="" loading="lazy" style="--c:${c}" onerror="this.style.visibility='hidden'">` : `<span class="face ${cls}" style="--c:${c}"></span>`;
+}
+const cognome = s => nomeP(s).split(" ").slice(-1)[0];
+const STATI = {Retired: "ritirato", Lapped: "doppiato", Disqualified: "squalificato", "Did not start": "non partito", Withdrew: "non partito",
+  Accident: "incidente", Collision: "collisione", "Collision damage": "danni da collisione", Engine: "motore", "Power Unit": "power unit",
+  Gearbox: "cambio", Hydraulics: "idraulica", Brakes: "freni", Suspension: "sospensioni", "Not classified": "non classificato",
+  Overheating: "surriscaldamento", "Spun off": "testacoda", Electrical: "impianto elettrico", Puncture: "foratura", Wheel: "ruota", Damage: "danni"};
+const statoIt = x => STATI[x] || String(x || "").replace(/^\+(\d+) Laps?$/, (m, n) => `+${n} ${n === "1" ? "giro" : "giri"}`);
+const durata = s => { if (s == null) return "–"; const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = (s % 60).toFixed(3).padStart(6, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`; };
+function podio(righe) {   // [[sigla, griglia, tempo del primo o distacco], …] in ordine d'arrivo
+  return `<div class="podio">${[1, 0, 2].filter(i => righe[i]).map(i => {
+    const [s, , t] = righe[i], p = PIL[s] || {}, u = fotoUrl(s, 2);
+    return `<a class="pc p${i + 1}" href="#p-${esc(s)}" style="--c:${col(p.squadra)}"><span class="n">${i + 1}</span>${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : ""}<span class="who"><b>${esc(cognome(s))}</b><small>${esc(p.squadra || "")}</small><span class="mono">${i === 0 ? (t ? durata(t) : "") : (typeof t === "number" ? "+" + num(t, 3) + " s" : esc(t || ""))}</span></span></a>`;
+  }).join("")}</div>`;
+}
+const passoGiri = L => L > 50 ? 10 : 5;
+function graficoPosizioni(g, hl) {
+  const ordine = g.righe.map(r => r.sigla).filter(s => g.posizioni[s]);
+  const N = Math.max(ordine.length, ...ordine.map(s => Math.max(0, ...g.posizioni[s].filter(x => x != null))));
+  const L = g.giri, ml = 44, mr = 44, mt = 24, row = 20, W = 900, H = mt + (N - 1) * row + 26;
+  const X = l => ml + l * (W - ml - mr) / L, Y = p => mt + (p - 1) * row;
+  const visti = {}, dash = {};
+  ordine.forEach(s => { const sq = (PIL[s] || {}).squadra; dash[s] = visti[sq] ? "6 4" : ""; visti[sq] = 1; });
+  let svg = "";
+  for (const n of g.neutralizzazioni) svg += `<rect x="${X(n.da - 1).toFixed(1)}" y="${mt - 16}" width="${Math.max(3, X(n.a) - X(n.da - 1)).toFixed(1)}" height="${(H - mt).toFixed(1)}" class="nz ${n.tipo === "SC" ? "sc" : n.tipo === "VSC" ? "vsc" : "rossa"}"/><text x="${(X(n.da - 1) + 3).toFixed(1)}" y="${mt - 6}" class="nzt">${n.tipo === "Rossa" ? "ROSSA" : n.tipo}</text>`;
+  for (let l = 0; l <= L; l += passoGiri(L)) svg += `<line x1="${X(l).toFixed(1)}" x2="${X(l).toFixed(1)}" y1="${mt - 8}" y2="${H - 16}" class="gl"/><text x="${X(l).toFixed(1)}" y="${H - 3}" class="ax" text-anchor="middle">${l}</text>`;
+  const sotto = [], sopra = [];
+  for (const s of ordine) {
+    const v = g.posizioni[s], c = col((PIL[s] || {}).squadra), on = !hl || hl === s;
+    let d = "", prev = false;
+    v.forEach((p, l) => { if (p == null) { prev = false; return; } d += (prev ? "L" : "M") + X(l).toFixed(1) + "," + Y(p).toFixed(1); prev = true; });
+    const fine = v.reduce((a, p, l) => p != null ? [l, p] : a, null);
+    const pezzo = `<path d="${d}" fill="none" stroke="${c}" stroke-width="${hl === s ? 3.6 : 2.1}" stroke-dasharray="${dash[s]}" stroke-linejoin="round" stroke-linecap="round" opacity="${on ? 1 : .12}" data-hl="${esc(s)}" class="ln"><title>${esc(nomeP(s))}</title></path>` +
+      (v[0] != null ? `<text x="${ml - 8}" y="${Y(v[0])}" class="lbl" text-anchor="end" dominant-baseline="middle" opacity="${on ? 1 : .35}">${esc(s)}</text>` : "") +
+      (fine ? (fine[0] < L
+        ? `<text x="${(X(fine[0]) + 3).toFixed(1)}" y="${(Y(fine[1]) - 7).toFixed(1)}" class="lbl rit" fill="${c}" opacity="${on ? 1 : .35}" data-hl="${esc(s)}">✕ ${esc(s)}</text>`
+        : `<text x="${(X(fine[0]) + 6).toFixed(1)}" y="${Y(fine[1])}" class="lbl" dominant-baseline="middle" fill="${c}" opacity="${on ? 1 : .35}" data-hl="${esc(s)}">${esc(s)}</text>`) : "");
+    (hl === s ? sopra : sotto).push(pezzo);
+  }
+  return `<div class="tw"><svg class="chart lap" viewBox="0 0 ${W} ${H}" role="img" aria-label="Posizione di ogni pilota giro per giro">${svg}${sotto.join("")}${sopra.join("")}</svg></div>`;
+}
+function graficoGomme(g) {
+  const ordine = g.righe.map(r => r.sigla).filter(s => g.strategie[s]);
+  const L = g.giri, ml = 44, mr = 8, row = 19, W = 900, H = ordine.length * row + 20;
+  const X = l => ml + l * (W - ml - mr) / L;
+  let svg = "";
+  for (let l = 0; l <= L; l += passoGiri(L)) svg += `<line x1="${X(l).toFixed(1)}" x2="${X(l).toFixed(1)}" y1="0" y2="${H - 16}" class="gl"/><text x="${X(l).toFixed(1)}" y="${H - 3}" class="ax" text-anchor="middle">${l}</text>`;
+  ordine.forEach((s, i) => {
+    const y = i * row + 1;
+    svg += `<text x="${ml - 8}" y="${y + (row - 5) / 2}" class="lbl" text-anchor="end" dominant-baseline="central">${esc(s)}</text>`;
+    for (const [c, a, b, eta] of g.strategie[s]) {
+      const t = TYRE[c] || ["#888", "?"], x = X(a - 1), w = Math.max(2, X(b) - X(a - 1)), scuro = c === "MEDIUM" || c === "HARD";
+      svg += `<rect x="${x.toFixed(1)}" y="${y}" width="${w.toFixed(1)}" height="${row - 5}" rx="3" fill="${t[0]}" class="st"><title>${esc(s)}: ${esc(NOME_MESCOLA[c] || c)}, giri ${a}–${b}${eta ? `, gomme già usate per ${eta} giri` : ", gomme nuove"}</title></rect>` +
+        (w > 26 ? `<text x="${(x + w / 2).toFixed(1)}" y="${y + (row - 5) / 2}" class="tl" fill="${scuro ? "#15171C" : "#fff"}" text-anchor="middle" dominant-baseline="central">${t[1]}${eta ? "·" : ""} ${b - a + 1}</text>` : "");
+    }
+  });
+  return `<div class="tw"><svg class="chart str" viewBox="0 0 ${W} ${H}" role="img" aria-label="Strategia gomme di ogni pilota">${svg}</svg></div>`;
+}
+function graficoPunti(serie, chi, colore, tratteggio, etichette) {
+  const n = etichette.length;
+  if (n < 2) return "";
+  const W = 900, H = 320, ml = 42, mr = 92, mt = 14, mb = 26;
+  const maxY = Math.max(10, ...chi.map(k => Math.max(...serie[k])));
+  const passo = maxY > 400 ? 100 : maxY > 150 ? 50 : 25;
+  const X = i => ml + i * (W - ml - mr) / (n - 1), Y = v => mt + (1 - v / maxY) * (H - mt - mb);
+  let svg = "";
+  for (let v = 0; v <= maxY; v += passo) svg += `<line x1="${ml}" x2="${W - mr}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="gl"/><text x="${ml - 6}" y="${Y(v).toFixed(1)}" class="ax" text-anchor="end" dominant-baseline="middle">${v}</text>`;
+  etichette.forEach((e, i) => { svg += `<text x="${X(i).toFixed(1)}" y="${H - 6}" class="ax" text-anchor="middle">${esc(e)}</text>`; });
+  const fine = [];
+  for (const k of chi) {
+    const v = serie[k], c = colore(k);
+    svg += `<path d="${v.map((p, i) => (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(p).toFixed(1)).join("")}" fill="none" stroke="${c}" stroke-width="2.4" stroke-dasharray="${tratteggio(k)}" stroke-linejoin="round"/><circle cx="${X(n - 1).toFixed(1)}" cy="${Y(v[n - 1]).toFixed(1)}" r="3.6" fill="${c}"/>`;
+    fine.push([Y(v[n - 1]), k, v[n - 1], c]);
+  }
+  fine.sort((a, b) => a[0] - b[0]);
+  for (let i = 1; i < fine.length; i++) if (fine[i][0] - fine[i - 1][0] < 13) fine[i][0] = fine[i - 1][0] + 13;   // etichette senza sovrapposizioni
+  for (const [y, k, v, c] of fine) svg += `<text x="${W - mr + 8}" y="${y.toFixed(1)}" class="lbl" dominant-baseline="middle" fill="${c}">${esc(k.length > 3 ? k.slice(0, 10) : k)} <tspan class="ax">${num(v, 0)}</tspan></text>`;
+  return `<div class="tw"><svg class="chart pts" viewBox="0 0 ${W} ${H}" role="img" aria-label="Punti in classifica dopo ogni round">${svg}</svg></div>`;
+}
+function graficoDuello(duello) {   // [[round, distacco % dal compagno]]: sotto la linea = più veloce
+  if (!duello.length) return "";
+  const W = 900, H = 170, ml = 40, mr = 10, mt = 16, mb = 22, n = duello.length;
+  const mx = Math.max(.3, ...duello.map(d => Math.abs(d[1])));
+  const bw = (W - ml - mr) / n, Y0 = mt + (H - mt - mb) / 2, k = (H - mt - mb) / 2 / mx;
+  let svg = `<line x1="${ml}" x2="${W - mr}" y1="${Y0}" y2="${Y0}" class="gl"/><text x="${ml - 6}" y="${mt + 4}" class="ax" text-anchor="end">+${num(mx, 1)}%</text><text x="${ml - 6}" y="${H - mb}" class="ax" text-anchor="end">−${num(mx, 1)}%</text>`;
+  duello.forEach(([rd, d], i) => {
+    const x = ml + i * bw + bw * .18, w = bw * .64, h = Math.abs(d) * k;
+    svg += `<rect x="${x.toFixed(1)}" y="${(d < 0 ? Y0 - h : Y0).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" rx="2" class="${d < 0 ? "meglio" : "peggio"}"><title>Round ${rd}: ${segno(d, 2)}% dal compagno</title></rect><text x="${(x + w / 2).toFixed(1)}" y="${H - 6}" class="ax" text-anchor="middle">${rd}</text>`;
+  });
+  return `<div class="tw"><svg class="chart duel" viewBox="0 0 ${W} ${H}" role="img" aria-label="Distacco in qualifica dal compagno, gara per gara">${svg}</svg></div>`;
+}
+
+// ------------------------------------------------------------------ analisi di un round
+const GARE = {};
+function caricaGara(n) {
+  if (GARE[n] !== undefined) return;
+  GARE[n] = null;
+  fetch(MAC ? `/api/gara/${n}` : `gare/${n}.json`, {cache: "no-store"}).then(r => r.ok ? r.json() : false)
+    .then(j => { GARE[n] = j || false; if (view === "r-" + n) render(); })
+    .catch(() => { GARE[n] = false; if (view === "r-" + n) render(); });
+}
+function vRound(n) {
+  const r = (D.calendario || []).find(x => x.round === n);
+  if (!r) return `<div class="empty">Gara non trovata.</div>`;
+  const A = GARE[n];
+  if (A === undefined || A === null) { caricaGara(n); }
+  const schede = A ? [["gara", "Gara"], ["sprint_gara", "Sprint"], ["qualifica", "Qualifica"], ["qualifica_sprint", "Qualifica sprint"]].filter(([k]) => A[k]) : [];
+  const sel = schede.some(([k]) => k === sub.rv) ? sub.rv : (schede[0] || [])[0];
+  let h = `<a class="back" href="#calendario">← Calendario</a><section class="hero" style="grid-template-columns:1fr;padding-top:14px"><div><div class="eyebrow"><span class="lab">Round ${r.round} · ${esc(quando(iso2t(r.orari.Gara)))}</span>${r.sprint ? '<span class="pill sprint">Weekend sprint</span>' : ""}</div><h1 class="${r.nome.length <= 14 ? "fit" : ""}" style="--len:${Math.max(r.nome.length, 5)}">${esc(r.nome)}</h1><div class="sub">${esc(r.circuito)}</div></div></section>`;
+  if (A === undefined || A === null) return h + `<div class="empty">Carico l'analisi della gara…</div>`;
+  if (!A) return h + vRoundSemplice(r);
+  if (schede.length > 1) h += `<div class="seg" data-seg="rv">${schede.map(([k, t]) => `<button data-v="${k}" aria-pressed="${k === sel}">${t}</button>`).join("")}</div>`;
+  const X = A[sel];
+  return h + (sel.startsWith("qualifica") ? vQualifica(X) : vCorsa(X, r, n));
+}
+function vRoundSemplice(r) {
+  return `<section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Pilota</th><th>Griglia</th><th class="l">Esito</th><th>Punti</th></tr></thead><tbody>` +
+    r.arrivo.map(([p, s, g, stato, pt]) => `<tr class="go" data-go="p-${esc(s)}"><td class="l">${pos(p)}</td><td class="l t">${drv(s, true, true)}</td><td>${g || "box"}</td><td class="l">${stato === "Finished" ? "" : `<span class="pill">${esc(statoIt(stato))}</span>`}</td><td>${pt || ""}</td></tr>`).join("") + `</tbody></table></div></section>`;
+}
+function vCorsa(g, r, n) {
+  const arr = g.righe.filter(x => x.arrivato);
+  const neutr = g.neutralizzazioni.reduce((a, x) => (a[x.tipo] = (a[x.tipo] || 0) + 1, a), {});
+  const gv = g.giro_veloce;
+  const rimonta = arr.filter(x => x.griglia).sort((a, b) => (b.griglia - b.pos) - (a.griglia - a.pos))[0];
+  const pv = (((D.storico || {}).voci || []).find(v => v.round === n && v.evento === (g.nome === "Sprint" ? "Sprint" : "Race")) || {}).prev || null;
+  let h = podio(arr.slice(0, 3).map(x => [x.sigla, x.griglia, x.pos === 1 ? x.tempo : x.distacco]));
+  h += `<div class="kpis" style="margin-top:14px">
+    ${gv ? `<div class="kpi"><b class="fast">${tempo(gv[1])}</b><span>giro più veloce · ${esc(gv[0])}, giro ${gv[2]}</span></div>` : ""}
+    <div class="kpi"><b>${g.giri}</b><span>giri</span></div>
+    <div class="kpi"><b>${g.sorpassi_totali}</b><span>sorpassi (anche ai pit stop)</span></div>
+    <div class="kpi"><b>${g.righe.length - arr.length}</b><span>ritirati</span></div>
+    <div class="kpi"><b>${(neutr.SC || 0) + (neutr.VSC || 0) + (neutr.Rossa || 0) ? [neutr.SC ? neutr.SC + " SC" : "", neutr.VSC ? neutr.VSC + " VSC" : "", neutr.Rossa ? neutr.Rossa + " rossa" : ""].filter(Boolean).join(" · ") : "0"}</b><span>neutralizzazioni</span></div>
+    ${rimonta && rimonta.griglia - rimonta.pos > 0 ? `<div class="kpi"><b class="up">+${rimonta.griglia - rimonta.pos}</b><span>rimonta di ${esc(rimonta.sigla)}, da ${rimonta.griglia}° a ${rimonta.pos}°</span></div>` : ""}</div>`;
+  const hl = sub.hl && g.posizioni[sub.hl] ? sub.hl : null;
+  h += `<h2>Posizioni giro per giro <small>tocca una linea o un nome per evidenziarlo · tratteggiato il secondo pilota della squadra</small></h2><section class="panel">${graficoPosizioni(g, hl)}
+    <div class="legend">${g.righe.map(x => `<button data-hl="${esc(x.sigla)}" aria-pressed="${hl === x.sigla}" style="--c:${col((PIL[x.sigla] || {}).squadra)}"><i></i>${esc(x.sigla)}</button>`).join("")}${hl ? `<button data-hl="${esc(hl)}">Mostra tutti</button>` : ""}</div>
+    <p class="note">A sinistra la posizione di partenza, a destra quella d'arrivo (✕ = ritirato). Fasce gialle: safety car e virtual safety car.</p></section>`;
+  h += `<h2>Strategie gomme <small>in ordine d'arrivo · il numero è la durata in giri, il puntino indica gomme già usate</small></h2><section class="panel">${graficoGomme(g)}
+    <div class="chips" style="margin-top:10px">${Object.keys(TYRE).filter(c => Object.values(g.strategie).some(v => v.some(s => s[0] === c))).map(c => `<span class="pill" style="display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-stretch:100%">${tyre(c)}${NOME_MESCOLA[c]}</span>`).join("")}</div></section>`;
+  h += `<h2>Classifica</h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Pilota</th><th>Griglia</th><th>+/−</th><th>Tempo / distacco</th><th>Soste</th><th class="l">Gomme</th><th>Sorpassi</th><th>Giri in testa</th><th>Punti</th>${pv ? "<th>Podio previsto</th>" : ""}</tr></thead><tbody>` +
+    g.righe.map(x => { const dlt = x.arrivato && x.griglia ? x.griglia - x.pos : null; return `<tr class="go" data-go="p-${esc(x.sigla)}"><td class="l">${pos(x.pos)}</td><td class="l t">${drv(x.sigla, true, true)}</td><td>${x.griglia || "box"}</td><td class="${dlt > 0 ? "up" : dlt < 0 ? "dn" : "muted"}">${dlt == null ? "" : dlt > 0 ? "+" + dlt : dlt < 0 ? "−" + -dlt : "="}</td><td>${!x.arrivato ? `<span class="pill">${esc(statoIt(x.stato || "Retired"))}</span>` : x.pos === 1 ? durata(x.tempo) : typeof x.distacco === "number" ? "+" + num(x.distacco, 3) : g.righe[0].giri && x.giri && g.righe[0].giri > x.giri ? `+${g.righe[0].giri - x.giri} ${g.righe[0].giri - x.giri === 1 ? "giro" : "giri"}` : esc(statoIt(x.stato || ""))}</td><td>${x.soste}</td><td class="l">${(g.strategie[x.sigla] || []).map(s => tyre(s[0])).join("")}</td><td>${x.sorpassi || ""}</td><td>${x.in_testa || ""}</td><td>${x.punti || ""}</td>${pv ? `<td>${pv[x.sigla] ? pct(pv[x.sigla][1]) : "–"}</td>` : ""}</tr>`; }).join("") + `</tbody></table></div></section>`;
+  const pa = (g.passo || []).slice(0, 12), mxp = Math.max(.5, ...pa.map(x => x[2]));
+  const pits = g.pit.filter(p => p[3]).sort((a, b) => a[3] - b[3]).slice(0, 10);
+  h += `<div class="cols" style="margin-top:16px"><section class="panel"><h3>Passo gara · tempo mediano dei giri puliti</h3><div class="bars">${pa.map(([s, t, d]) => `<div class="bar" style="--c:${col((PIL[s] || {}).squadra)}"><span>${drv(s)}</span><span class="tr"><i style="width:${Math.max(3, 100 - d / mxp * 85)}%"></i></span><span class="v">${d ? "+" + num(d, 2) : tempo(t)}</span></div>`).join("") || '<p class="muted">Dati non sufficienti.</p>'}</div><p class="note">Senza primo giro, giri dei box e neutralizzazioni. Il primo mostra il suo tempo, gli altri i secondi in più a giro.</p></section>
+    <section class="panel"><h3>Pit stop più veloci · macchina ferma</h3>${pits.length ? `<div class="rec">${pits.map((p, i) => `<a href="#p-${esc(p[0])}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(p[0], true, true)} <span class="small muted">giro ${p[1]}</span></span><span class="v">${num(p[3], 1)} s</span></a>`).join("")}</div>` : `<p class="muted">Per questa gara OpenF1 non ha i tempi da fermi. Tempo in corsia: ${g.pit.length ? num(Math.min(...g.pit.map(p => p[2] || 99)), 1) + " s il più rapido" : "–"}.</p>`}</section></div>`;
+  if ((g.penalita || []).length) h += `<details class="panel" style="margin-top:16px"><summary class="lab" style="cursor:pointer">Penalità e decisioni dei commissari (${g.penalita.length})</summary><div class="msgs" style="margin-top:8px">${g.penalita.map(m => `<div>${esc(m)}</div>`).join("")}</div></details>`;
+  return h;
+}
+function vQualifica(q) {
+  const fasi = q.nome === "Qualifica sprint" ? ["SQ1", "SQ2", "SQ3"] : ["Q1", "Q2", "Q3"];
+  const mf = [0, 1, 2].map(i => Math.min(...q.righe.map(r => r.fasi[i] || 1e9)));
+  const ms = q.settori_migliori || [];
+  const pole = q.righe[0], sec = q.righe[1];
+  let h = pole ? podio(q.righe.slice(0, 3).map((r, i) => [r.sigla, null, i === 0 ? null : r.distacco])) : "";
+  if (pole) h = h.replace(/<span class="mono"><\/span>/, `<span class="mono">${tempo(pole.best)}</span>`);
+  h += `<div class="kpis" style="margin-top:14px">${pole ? `<div class="kpi"><b class="fast">${tempo(pole.best)}</b><span>pole di ${esc(pole.sigla)}</span></div>` : ""}${sec && sec.distacco != null ? `<div class="kpi"><b>${num(sec.distacco, 3)} s</b><span>tra primo e secondo</span></div>` : ""}${q.ideale_migliore ? `<div class="kpi"><b>${tempo(q.ideale_migliore)}</b><span>giro ideale: i tre settori migliori di tutti</span></div>` : ""}${ms.length === 3 ? ms.map((s, i) => `<div class="kpi"><b>${num(s, 3)}</b><span>settore ${i + 1} migliore · ${esc((q.righe.find(r => r.settori && r.settori[i] === s) || {}).sigla || "")}</span></div>`).join("") : ""}</div>`;
+  h += `<h2>Tempi di ${fasi.join(", ")} <small>viola il migliore di ogni fase e di ogni settore</small></h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Pos</th><th class="l">Pilota</th>${fasi.map(f => `<th>${f}</th>`).join("")}<th>Distacco</th><th>S1</th><th>S2</th><th>S3</th><th>Giro ideale</th><th>Perso</th></tr></thead><tbody>` +
+    q.righe.map(r => `<tr class="go" data-go="p-${esc(r.sigla)}"><td class="l">${pos(r.pos)}</td><td class="l t">${drv(r.sigla, true, true)}</td>${[0, 1, 2].map(i => `<td class="${r.fasi[i] && r.fasi[i] === mf[i] ? "fast" : ""}">${r.fasi[i] ? tempo(r.fasi[i]) : ""}</td>`).join("")}<td>${r.distacco ? "+" + num(r.distacco, 3) : r.pos === 1 ? "" : "–"}</td>${[0, 1, 2].map(i => `<td class="${r.settori && r.settori[i] === ms[i] ? "fast" : ""}">${r.settori ? num(r.settori[i], 3) : "–"}</td>`).join("")}<td>${r.ideale ? tempo(r.ideale) : "–"}</td><td class="muted">${r.ideale && r.best && r.best - r.ideale > .0005 ? num(r.best - r.ideale, 3) : ""}</td></tr>`).join("") +
+    `</tbody></table></div><p class="note">Giro ideale: la somma dei tre settori migliori del pilota in tutta la sessione. «Perso» è quanto il suo giro migliore è stato più lento di quella somma.</p></section>`;
+  return h;
+}
+
+// ------------------------------------------------------------------ record
+function vRecord() {
+  const R = D.record;
+  if (!R) return `<div class="empty">I record compaiono dopo la prima gara.</div>`;
+  const gp = (rd, nome) => `<span class="small muted">${esc(nome)}</span>`;
+  const lista = (righe, fn) => `<div class="rec">${righe.map((x, i) => fn(x, i)).join("")}</div>`;
+  const pv = R.pole_vittoria || {};
+  let h = `<section class="hero" style="grid-template-columns:1fr;padding-bottom:0"><div><div class="eyebrow"><span class="lab">Record della stagione ${D.anno}</span></div><h1 style="font-size:clamp(34px,6.6vw,64px)">${pv.vinte_dalla_pole || 0} su ${pv.gare || 0}</h1><div class="sub">Gare vinte da chi partiva in pole. ${(pv.griglia_vincitori || []).filter(([g]) => g > 1).map(([g, c]) => `${c} ${c === 1 ? "vinta" : "vinte"} partendo ${g}°`).join(", ")}.</div></div></section>`;
+  h += `<div class="cols" style="margin-top:18px">
+    <section class="panel"><h3>Pit stop più veloci · macchina ferma</h3>${lista(R.pit || [], (x, i) => `<a href="#r-${x[2]}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(x[1], false, true)} ${gp(x[2], x[3])}</span><span class="v">${num(x[0], 1)} s</span></a>`)}</section>
+    <section class="panel"><h3>Velocità massime</h3>${lista(R.velocita || [], (x, i) => `<a href="#r-${x[2]}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(x[1], false, true)} ${gp(x[2], x[3])}</span><span class="v">${x[0]} km/h</span></a>`)}</section>
+    <section class="panel"><h3>Rimonte più grandi</h3>${lista(R.rimonte || [], (x, i) => `<a href="#r-${x[2]}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(x[1], false, true)} ${gp(x[2], x[3])} <span class="small muted">da ${x[4]}° a ${x[5]}°</span></span><span class="v up">+${x[0]}</span></a>`)}</section>
+    <section class="panel"><h3>Più sorpassi in una gara</h3>${lista(R.sorpassi || [], (x, i) => `<a href="#r-${x[2]}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(x[1], false, true)} ${gp(x[2], x[3])}</span><span class="v">${x[0]}</span></a>`)}<p class="note">Contano anche i cambi di posizione dovuti ai pit stop.</p></section>
+    <section class="panel"><h3>Arrivi più ravvicinati</h3>${lista(R.vicini || [], (x, i) => `<a href="#r-${x[3]}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(x[1])} su ${drv(x[2])} ${gp(x[3], x[4])}</span><span class="v">${num(x[0], 3)} s</span></a>`)}</section>
+    <section class="panel"><h3>Pole più nette</h3>${lista(R.pole_nette || [], (x, i) => `<a href="#r-${x[3]}" class="${i ? "" : "first"}"><span class="k">${i + 1}</span><span>${drv(x[1])} su ${drv(x[2])} ${gp(x[3], x[4])}</span><span class="v">${num(x[0], 3)} s</span></a>`)}</section></div>`;
+  const testa = R.in_testa || [], mt = Math.max(1, ...testa.map(x => x[1]));
+  h += `<h2>Giri in testa <small>tutta la stagione</small></h2><section class="panel"><div class="bars">${testa.map(([s, n]) => `<div class="bar" style="--c:${col((PIL[s] || {}).squadra)}"><span>${drv(s, false, true)}</span><span class="tr"><i style="width:${n / mt * 100}%"></i></span><span class="v">${n}</span></div>`).join("")}</div></section>`;
+  h += `<h2>Giro più veloce di ogni gara</h2><section class="panel"><div class="tw"><table><thead><tr><th class="l">Rd</th><th class="l">Gran Premio</th><th class="l">Pilota</th><th>Tempo</th><th>Giro</th></tr></thead><tbody>${(R.giri_veloci || []).map(([rd, nome, s, t, lap]) => `<tr class="go" data-go="r-${rd}"><td class="l">${rd}</td><td class="l t">${esc(nome)}</td><td class="l t">${drv(s, true, true)}</td><td class="fast">${tempo(t)}</td><td>${lap}</td></tr>`).join("")}</tbody></table></div></section>`;
+  return h;
+}
+
 // ------------------------------------------------------------------ eventi
 function bind() {
   document.querySelectorAll("tr[data-go]").forEach(tr => tr.onclick = () => location.hash = tr.dataset.go);
   document.querySelectorAll("[data-seg]").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => {
     sub[g.dataset.seg] = b.dataset.i != null ? +b.dataset.i : b.dataset.v; render();
   }));
+  document.querySelectorAll("[data-hl]").forEach(el => el.onclick = () => { const s = el.dataset.hl; sub.hl = sub.hl === s ? null : s; render(); });
   document.querySelectorAll("th[data-sort]").forEach(th => th.onclick = () => {
     const c = th.dataset.sort; sub.dir = sub.sort === c ? -(sub.dir || -1) : (["media_qualifica", "media_arrivo", "ritiri", "passo_r"].includes(c) ? 1 : -1); sub.sort = c; render();
   });

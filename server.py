@@ -7,6 +7,7 @@
 """
 import asyncio
 import json
+import math
 import os
 import random
 import signal
@@ -28,7 +29,7 @@ from fonti import Fonti, NonDisponibile, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-15"
+VERSIONE = "2026-10-19"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -133,6 +134,22 @@ def classifica_sessione(s):
             "righe": righe, "sc": sc, "vsc": vsc, "rosse": rosse, "penalita": pen, "meteo": s.get("meteo")}
 
 
+def mini_mappa(t, punti=90):
+    """Il tracciato in miniatura per il calendario: percorso SVG in un riquadro 100×100, stesso orientamento della
+    mappa grande."""
+    if not t or not t.get("x"):
+        return None
+    a = math.radians(t.get("rotazione") or 0)
+    c, s = math.cos(a), math.sin(a)
+    pts = [(x * c - y * s, -(x * s + y * c)) for x, y in zip(t["x"], t["y"])]
+    pts = pts[::max(1, len(pts) // punti)]
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    w, h = max(xs) - min(xs), max(ys) - min(ys)
+    k = 92 / max(w, h, 1)
+    ox, oy = (100 - w * k) / 2 - min(xs) * k, (100 - h * k) / 2 - min(ys) * k
+    return "M" + "L".join(f"{x * k + ox:.1f},{y * k + oy:.1f}" for x, y in pts) + "Z"
+
+
 def calendario(st, wk, sess):
     vinc = {int(g["round"]): g["Results"] for g in st.get("risultati") or []}
     qual = {int(g["round"]): g["QualifyingResults"] for g in st.get("qualifiche") or []}
@@ -149,6 +166,8 @@ def calendario(st, wk, sess):
             "sprint_vincitore": spr[rd][0]["Driver"]["code"] if spr.get(rd) else None,
             "arrivo": [[int(x["position"]), x["Driver"]["code"], int(x["grid"]), x["status"], float(x["points"])]
                        for x in ris],
+            "inizio": w["inizio"],
+            "mappa": mini_mappa(leggi(CACHE / "tracciati" / f"{w['ck']}.json")) if w.get("ck") else None,
         })
     return out
 
@@ -407,10 +426,20 @@ async def aggiorna_fonti(f, adesso, forza=False):
             STATO["errori"]["storia"] = str(e)
     wk = model.weekend(st)
     w = prossimo_weekend(wk, adesso)
+    # i tracciati di tutti i circuiti: il prossimo per la mappa grande, gli altri per le miniature del calendario
+    for wx in sorted(wk, key=lambda x: x is not w):
+        if wx.get("ck") and not (CACHE / "tracciati" / f"{wx['ck']}.json").exists():
+            if await dati.tracciato(f, wx["ck"], ANNO):
+                cambiato = True
+                continue
+            gara = dati.leggi(dati.file_sessione(wx["sessioni"].get("Race"))) if wx["sessioni"].get("Race") else None
+            if gara and gara.get("risultato"):   # MultiViewer non ce l'ha: dalla gara già corsa
+                try:
+                    if await dati.tracciato_da_openf1(f, wx["ck"], gara, ANNO):
+                        cambiato = True
+                except (RuntimeError, NonDisponibile):
+                    pass
     if w and w.get("ck"):
-        if not (CACHE / "tracciati" / f"{w['ck']}.json").exists():
-            await dati.tracciato(f, w["ck"], ANNO)
-            cambiato = True
         meteo = leggi(FILE_METEO)
         t_gara = ts(w["orari"]["Gara"])
         if t_gara - adesso < 8 * 86400 and (not meteo or meteo.get("round") != str(w["round"])
@@ -419,6 +448,7 @@ async def aggiorna_fonti(f, adesso, forza=False):
             try:
                 scrivi(FILE_METEO, await dati.meteo_weekend(f, jg))
                 cambiato = True
+                STATO["errori"].pop("meteo", None)
             except RuntimeError as e:
                 STATO["errori"]["meteo"] = str(e)
     STATO["openf1_in_pausa"] = f.openf1_in_pausa

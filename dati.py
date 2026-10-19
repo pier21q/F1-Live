@@ -14,7 +14,7 @@ import os
 import time
 from pathlib import Path
 
-from fonti import NonDisponibile, ts
+from fonti import NonDisponibile, iso, ts
 
 DATA = Path(os.environ.get("F1LIVE_DATA_DIR") or Path.home() / "Library" / "Application Support" / "F1 Live")
 CACHE = DATA / "cache"
@@ -282,6 +282,28 @@ async def tracciato(f, circuit_key, anno):
            # secondi persi con un pit stop: normale, sotto safety car e sotto virtual safety car
            "pit": num(pit.get("normal")), "pit_sc": num(pit.get("sc")), "pit_vsc": num(pit.get("vsc")), "curve": [[c["number"], round(c["trackPosition"]["x"]), round(c["trackPosition"]["y"])]
                                              for c in d.get("corners") or []]}
+    scrivi(path, out)
+    return out
+
+
+async def tracciato_da_openf1(f, ck, sess, anno):
+    """Per i circuiti che MultiViewer non ha (Madrid, Sepang): la forma della pista ricavata dalle posizioni in pista
+    di un giro pulito del vincitore (OpenF1, endpoint location). Senza curve numerate né tempo dei box."""
+    path = CACHE / "tracciati" / f"{ck}.json"
+    vinc = next((r["n"] for r in sess.get("risultato") or [] if r.get("pos") == 1), None)
+    giri = sorted([g for g in sess.get("giri") or [] if g[0] == vinc and g[2] and not g[6] and g[8] and g[1] > 1],
+                  key=lambda g: g[2])
+    if not giri:
+        return None
+    g = giri[0]
+    punti = await f.openf1("location", session_key=sess["sk"], driver_number=vinc,
+                           date__gte=iso(g[8]), date__lt=iso(g[8] + g[2]))
+    punti = [p for p in punti if p.get("x") is not None and (p.get("x") or p.get("y"))]
+    if len(punti) < 50:
+        return None
+    passo = max(1, len(punti) // 260)
+    out = {"anno": anno, "x": [p["x"] for p in punti][::passo], "y": [p["y"] for p in punti][::passo], "rotazione": 0,
+           "pit": None, "curve": [], "fonte": "OpenF1"}
     scrivi(path, out)
     return out
 

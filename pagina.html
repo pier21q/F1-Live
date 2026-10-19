@@ -299,6 +299,36 @@ svg.chart .peggio{fill:var(--down);opacity:.85}
 .rec .v{font-family:var(--mono);font-weight:600;font-size:14px;white-space:nowrap}
 .rec .first .v{color:var(--purple)}
 
+
+/* ---- calendario */
+.stagione{display:grid;grid-template-columns:repeat(auto-fit,minmax(10px,1fr));gap:3px}
+.stagione a{height:26px;border-radius:2px;background:var(--sunk);display:block;transform:skewX(-14deg)}
+.stagione a.done{background:var(--c)}
+.stagione a.next{background:repeating-linear-gradient(90deg,var(--red) 0 4px,var(--kerbw) 4px 8px);animation:blink 1.6s infinite}
+.stagione a:hover{outline:2px solid var(--ink);outline-offset:1px}
+.stleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:13px}
+.stleg span{display:inline-flex;align-items:center;gap:6px}
+.stleg i{width:10px;height:10px;border-radius:2px;background:var(--c)}
+.gpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px}
+.gpc{position:relative;display:flex;flex-direction:column;gap:3px;min-height:178px;padding:14px 14px 12px;border-radius:6px;background:var(--surface);border:1px solid var(--line);text-decoration:none;overflow:hidden;isolation:isolate;transition:transform .15s,border-color .15s}
+.gpc:hover{transform:translateY(-2px);border-color:var(--ink2)}
+.gpc.done{border-top:4px solid var(--c)}
+.gpc.next{border:2px solid var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 14%,transparent)}
+.gpc .rn{position:absolute;right:10px;top:4px;z-index:-1;font-family:var(--display);font-stretch:125%;font-style:italic;font-weight:900;font-size:64px;line-height:1;color:transparent;-webkit-text-stroke:1.3px var(--line)}
+.gpc .mini{position:absolute;right:8px;bottom:44px;width:86px;height:86px;z-index:-1;opacity:.9}
+.gpc .mini path{fill:none;stroke:var(--muted);stroke-width:3.2;stroke-linejoin:round;opacity:.55}
+.gpc.done .mini path{stroke:var(--c);opacity:.75}
+.gpc.next .mini path{stroke:var(--red);opacity:1}
+.gpc .top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.gpc .gn{font-family:var(--display);font-stretch:118%;font-style:italic;font-weight:800;font-size:22px;line-height:1.05;text-transform:uppercase;max-width:70%;margin-top:4px;text-wrap:balance}
+.gpc .cir{max-width:62%}
+.gpc .vinto{margin-top:auto;padding-top:10px;display:flex;align-items:center;gap:10px}
+.gpc .vinto > span:last-child{display:grid;line-height:1.2}
+.gpc .vinto b{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:15px;text-transform:uppercase}
+.gpc .facce{display:flex}
+.gpc .facce .face{width:30px;height:30px;margin-left:-8px;box-shadow:0 0 0 2px var(--surface)}
+.gpc .facce .face:first-child{margin-left:0}
+.gpc .facce .face.primo{width:38px;height:38px}
 @media (max-width:560px){
   .bar{grid-template-columns:minmax(0,96px) 1fr 46px}
   .diverge{grid-template-columns:minmax(0,96px) 1fr 1fr}
@@ -679,13 +709,42 @@ function vSquadre() {
 
 // ------------------------------------------------------------------ calendario
 function vCalendario() {
-  const now = Date.now() / 1000;
-  const prox = (D.calendario || []).find(r => iso2t(r.orari.Gara) + 14 * 3600 > now);
-  return `<h2>Calendario ${D.anno} <small>${(D.calendario || []).filter(r => r.vincitore).length} gare corse su ${(D.calendario || []).length}</small></h2><section>` + (D.calendario || []).map(r => {
-    const t = iso2t(r.orari.Gara), fatto = !!r.vincitore, next = prox && prox.round === r.round;
-    return `<a class="cal ${fatto ? "done" : ""} ${next ? "next" : ""}" href="${fatto ? "#r-" + r.round : next ? "#weekend" : "#calendario"}"><span class="r">${r.round}</span><span style="min-width:0"><span class="g">${esc(r.nome)}</span> ${r.sprint ? '<span class="pill sprint">Sprint</span>' : ""}<br><span class="small muted">${esc(r.circuito)} · <span class="mono">${quando(t)}</span></span></span><span class="w">${fatto ? `${drv(r.vincitore, false, true)}<span class="small muted">pole ${esc(r.pole || "–")}${r.sprint_vincitore ? " · sprint " + esc(r.sprint_vincitore) : ""}</span>` : next ? '<span class="pill on">Prossimo</span>' : ""}</span></a>`;
-  }).join("") + `</section>`;
+  const now = Date.now() / 1000, C = D.calendario || [];
+  const prox = C.find(r => iso2t(r.orari.Gara) + 14 * 3600 > now);
+  const fatte = C.filter(r => r.vincitore).length;
+  const vincite = {};
+  C.forEach(r => { if (r.vincitore) { const sq = (PIL[r.vincitore] || {}).squadra; vincite[sq] = (vincite[sq] || 0) + 1; } });
+  // la stagione in una barra: un segmento per gara, colorato con la squadra che l'ha vinta
+  const barra = `<div class="stagione" role="img" aria-label="${fatte} gare corse su ${C.length}">${C.map(r => {
+    const sq = r.vincitore ? (PIL[r.vincitore] || {}).squadra : null, next = prox && prox.round === r.round;
+    return `<a href="${r.vincitore ? "#r-" + r.round : next ? "#weekend" : "#calendario"}" class="${next ? "next" : r.vincitore ? "done" : ""}" style="${sq ? `--c:${col(sq)}` : ""}" title="${r.round}. ${esc(r.nome)}${r.vincitore ? " · vince " + esc(nomeP(r.vincitore)) : ""}"></a>`;
+  }).join("")}</div><div class="stleg">${Object.entries(vincite).sort((a, b) => b[1] - a[1]).map(([sq, n]) => `<span style="--c:${col(sq)}"><i></i>${esc(sq)} <b>${n}</b></span>`).join("")}<span class="muted">${C.length - fatte} da correre</span></div>`;
+  const giorni = t => Math.ceil((t - now) / 86400);
+  const mesi = {};
+  C.forEach(r => { const m = fmt(iso2t(r.orari.Gara), {month: "long"}); (mesi[m] = mesi[m] || []).push(r); });
+  const scheda = r => {
+    const t = iso2t(r.orari.Gara), t0 = iso2t(r.inizio) || t - 2 * 86400, fatto = !!r.vincitore, next = prox && prox.round === r.round;
+    const sq = fatto ? (PIL[r.vincitore] || {}).squadra : null;
+    const date = `${fmt(t0, {day: "numeric"})}–${fmt(t, {day: "numeric", month: "short"})}`;
+    const podio3 = (r.arrivo || []).filter(x => x[0] <= 3).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+    const fondo = fatto
+      ? `<div class="vinto"><span class="facce">${podio3.map((s, i) => faccia(s, 2, i ? "" : "primo")).join("")}</span><span><span class="lab">Vince</span><b>${esc(cognome(r.vincitore))}</b><span class="small muted">pole ${esc(r.pole || "–")}${r.sprint_vincitore ? " · sprint " + esc(r.sprint_vincitore) : ""}</span></span></div>`
+      : next ? `<div class="vinto"><span class="pill on">Prossimo</span><span class="mono small">${giorni(t0) > 0 ? `tra ${giorni(t0)} ${giorni(t0) === 1 ? "giorno" : "giorni"}` : "in corso"}</span></div>`
+      : `<div class="vinto"><span class="mono small muted">gara ${esc(quando(t))}</span></div>`;
+    return `<a class="gpc ${fatto ? "done" : ""} ${next ? "next" : ""}" href="${fatto ? "#r-" + r.round : next ? "#weekend" : "#calendario"}" style="${sq ? `--c:${col(sq)}` : ""}">
+      <span class="rn">${r.round}</span>
+      ${r.mappa ? `<svg class="mini" viewBox="0 0 100 100" aria-hidden="true"><path d="${r.mappa}"/></svg>` : ""}
+      <span class="top"><span class="mono small">${esc(date)}</span>${r.sprint ? '<span class="pill sprint">Sprint</span>' : ""}${r.cittadino ? '<span class="pill">Cittadino</span>' : ""}</span>
+      <span class="gn">${esc(r.nome)}</span>
+      <span class="small muted cir">${esc(r.circuito)}</span>
+      ${fondo}</a>`;
+  };
+  let h = `<section class="hero" style="grid-template-columns:1fr;padding-bottom:0"><div><div class="eyebrow"><span class="lab">Calendario ${D.anno}</span></div><h1 style="font-size:clamp(34px,6.6vw,64px)">${fatte} di ${C.length}</h1><div class="sub">Gran Premi corsi${prox ? `. Il prossimo: <a href="#weekend"><b>${esc(prox.nome)}</b></a>, ${esc(quando(iso2t(prox.orari.Gara)))}` : ""}.</div></div></section>`;
+  h += `<section class="panel" style="margin-top:18px">${barra}</section>`;
+  for (const [m, rs] of Object.entries(mesi)) h += `<h2>${esc(m[0].toUpperCase() + m.slice(1))}</h2><div class="gpgrid">${rs.map(scheda).join("")}</div>`;
+  return h;
 }
+
 // ------------------------------------------------------------------ storico
 function vStorico() {
   const S = D.storico || {}, R = S.riepilogo || {};

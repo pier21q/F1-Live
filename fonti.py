@@ -14,6 +14,8 @@ import time
 from datetime import datetime, timezone
 
 import aiohttp
+from urllib.parse import quote
+from yarl import URL
 
 JOLPICA = "https://api.jolpi.ca/ergast/f1"
 OPENF1 = "https://api.openf1.org/v1"
@@ -144,17 +146,21 @@ class Fonti:
     # --- OpenF1 ---
     async def openf1(self, ep, **params):
         """params con operatori: date__gt='...' diventa date>... (lo stesso per lt, gte, lte)."""
-        p = {}
+        # l'indirizzo si scrive a mano: OpenF1 vuole gli operatori così come sono («date>=…»); codificati
+        # («date%3E%3D=…») per il filtro sulle date risponde con un errore
+        parti = []
         for k, v in params.items():
-            for suf, op in (("__gte", ">="), ("__lte", "<="), ("__gt", ">"), ("__lt", "<")):
+            op = "="
+            for suf, o in (("__gte", ">="), ("__lte", "<="), ("__gt", ">"), ("__lt", "<")):
                 if k.endswith(suf):
-                    k = k[: -len(suf)] + op
+                    k, op = k[: -len(suf)], o
                     break
-            p[k] = str(v)
+            parti.append(f"{k}{op}{quote(str(v), safe=':.-')}")
+        url = URL(f"{OPENF1}/{ep}" + ("?" + "&".join(parti) if parti else ""), encoded=True)
         if time.time() < self.pausa_openf1:
             raise NonDisponibile("OpenF1 è chiuso durante la sessione")
         try:
-            d = await self.get("OpenF1", f"{OPENF1}/{ep}", p, self.r_of, headers=await self.intestazioni_openf1())
+            d = await self.get("OpenF1", url, None, self.r_of, headers=await self.intestazioni_openf1())
         except NonDisponibile:
             # «Live F1 session in progress»: niente dati, nemmeno quelli vecchi, finché la sessione non finisce
             self.pausa_openf1 = time.time() + 120

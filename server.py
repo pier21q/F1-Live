@@ -29,7 +29,7 @@ from fonti import Fonti, NonDisponibile, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-19"
+VERSIONE = "2026-10-19.2"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")

@@ -25,11 +25,11 @@ import dati
 import model
 import sito
 from dati import CACHE, DATA, leggi, log, scrivi
-from fonti import Fonti, NonDisponibile, iso, ts
+from fonti import Fonti, NonDisponibile, completa_sigle, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-10-19.2"
+VERSIONE = "2026-11-01.1"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -179,6 +179,7 @@ def calcola(adesso=None, ritara=False):
     st = leggi(FILE_STAGIONE)
     if not st:
         return None
+    completa_sigle(st)
     sess = sessioni_della_stagione(st)
     storia = leggi(FILE_STORIA, {}) or {}
     # le gare 2026 già corse entrano nella storia dei circuiti

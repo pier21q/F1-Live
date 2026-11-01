@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import time
+import unicodedata
 from datetime import datetime, timezone
 
 import aiohttp
@@ -50,6 +51,20 @@ def ts(s):
     if d.tzinfo is None:
         d = d.replace(tzinfo=timezone.utc)
     return d.timestamp()
+
+
+def completa_sigle(x):
+    """Jolpica a volte non dà la sigla ai piloti di riserva (Hirakawa in Messico 2026): la ricava dal cognome."""
+    if isinstance(x, list):
+        for v in x:
+            completa_sigle(v)
+    elif isinstance(x, dict):
+        if "driverId" in x and not x.get("code"):
+            lettere = [c for c in unicodedata.normalize("NFKD", x.get("familyName") or x["driverId"]) if c.isalpha()]
+            x["code"] = "".join(lettere[:3]).upper()
+        for v in x.values():
+            completa_sigle(v)
+    return x
 
 
 def iso(t):
@@ -183,7 +198,7 @@ class Fonti:
             if not d:
                 return out
             m = d["MRData"]
-            items = m[tabella][chiave]
+            items = completa_sigle(m[tabella][chiave])
             out.extend(items)
             offset += 100
             # i risultati sono raggruppati per gara: "total" conta le righe, non le gare

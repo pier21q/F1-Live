@@ -579,6 +579,13 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
             if sq:
                 nomi_c[x["Constructor"]["constructorId"]] = sq
     c0 = {nomi_c.get(x["Constructor"]["constructorId"]) or x["Constructor"]["name"]: float(x["points"]) for x in cc}
+    # a pari punti il titolo va a chi ha più vittorie in gara (le sprint non contano), poi più secondi posti e così via
+    piazz, piazz_c = defaultdict(Counter), defaultdict(Counter)
+    for g in st.get("risultati") or []:
+        for x in g["Results"]:
+            if x.get("positionText", "").isdigit():
+                piazz[x["Driver"]["code"]][int(x["position"])] += 1
+                piazz_c[nomi_c.get(x["Constructor"]["constructorId"]) or x["Constructor"]["name"]][int(x["position"])] += 1
     squadra_di = {}
     eventi = []
     corsi = []   # eventi finiti ma non ancora nella classifica Jolpica
@@ -603,7 +610,7 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
                 for k, v in pil.items():
                     squadra_di[k] = v.get("squadra")
             eventi.append((ev, w, circ, pil))
-    for s, _, _ in corsi:
+    for s, ev, _ in corsi:
         sg, sqs = sigle(s), squadre(s)
         for x in s["risultato"]:
             sig = sg.get(x["n"])
@@ -611,6 +618,14 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
                 punti0[sig] = punti0.get(sig, 0) + x["punti"]
                 if sqs.get(sig):
                     c0[sqs[sig]] = c0.get(sqs[sig], 0) + x["punti"]
+            if ev == "Race" and sig and x.get("pos") and not (x.get("dnf") or x.get("dns") or x.get("dsq")):
+                piazz[sig][x["pos"]] += 1
+                if sqs.get(sig):
+                    piazz_c[sqs[sig]][x["pos"]] += 1
+
+    def spareggio(pari, base, sim):
+        """Tra chi è a pari punti vince chi ha più primi posti in gara, poi più secondi, e così via."""
+        return max(pari, key=lambda k: tuple(base[k][i] + sim[k][i] for i in range(1, 31)))
     rng = random.Random(seed)
     titoli = Counter()
     titoli_c = Counter()
@@ -624,6 +639,7 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
         deriva = defaultdict(float)
         # il passo di ogni pilota è una stima: in ogni stagione simulata può essere un po' diverso da quello calcolato
         deriva_p = defaultdict(lambda: rng.gauss(0, IMPREVISTI["incertezza_pilota"]))
+        sim_p, sim_c = defaultdict(Counter), defaultdict(Counter)
         for tipo, w, circ, pil in eventi:
             if tipo == "Race" or not w["sprint"]:
                 for sq in set(p.get("squadra") for p in pil.values()):
@@ -646,18 +662,38 @@ def simula_titolo(st, wk, val_fn, storia, par, ritiro, ritiro_base, n_sim=2500, 
                 pt[s] = pt.get(s, 0) + tab[pos]
                 sq = ris[s]["squadra"]
                 ptc[sq] = ptc.get(sq, 0) + tab[pos]
+            if tipo == "Race":
+                for pos, s in enumerate(ordine, 1):
+                    if not ris[s]["ritiro"]:
+                        sim_p[s][pos] += 1
+                        sim_c[ris[s]["squadra"]][pos] += 1
         top = max(pt.values())
-        vincitori = [s for s, p in pt.items() if p == top]
-        titoli[rng.choice(vincitori)] += 1
+        titoli[spareggio([s for s, p in pt.items() if p == top], piazz, sim_p)] += 1
         topc = max(ptc.values())
-        titoli_c[rng.choice([s for s, p in ptc.items() if p == topc])] += 1
+        titoli_c[spareggio([s for s, p in ptc.items() if p == topc], piazz_c, sim_c)] += 1
         for s, p in pt.items():
             finali[s] += p
         for s, p in ptc.items():
             finali_c[s] += p
+    # titolo già deciso: chi insegue non può più raggiungere il primo nemmeno vincendo tutto (una squadra al massimo
+    # fa primo e secondo: 43 punti a gara, 15 a sprint). A pari punti deciderebbero le vittorie: si resta prudenti
+    palio = sum(25 if e[0] == "Race" else 8 for e in eventi)
+    palio_c = sum(43 if e[0] == "Race" else 15 for e in eventi)
+
+    def deciso(pt, margine):
+        ordine = sorted(pt.values(), reverse=True)
+        return len(ordine) > 1 and ordine[0] - ordine[1] > margine
+
+    campione = max(punti0, key=punti0.get) if deciso(punti0, palio) else None
+    campione_c = max(c0, key=c0.get) if c0 and deciso(c0, palio_c) else None
+    if campione:
+        titoli = Counter({campione: n_sim})
+    if campione_c:
+        titoli_c = Counter({campione_c: n_sim})
     return {
         "gare_rimaste": sum(1 for e in eventi if e[0] == "Race"), "sprint_rimaste": sum(1 for e in eventi if e[0] == "Sprint"),
-        "punti_in_palio": sum(25 if e[0] == "Race" else 8 for e in eventi),
+        "punti_in_palio": palio, "punti_in_palio_costruttori": palio_c,
+        "campione": campione, "campione_costruttori": campione_c,
         # corse finite che la classifica ufficiale (Jolpica) non conta ancora: i loro punti sono già in "punti"
         "aggiunti": [("Sprint" if ev == "Sprint" else "Gara") + " " + w["nome"] for _, ev, w in corsi],
         "piloti": sorted([{"sigla": s, "punti": punti0.get(s, 0), "titolo": titoli[s] / n_sim, "finali": finali[s] / n_sim,

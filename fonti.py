@@ -53,17 +53,40 @@ def ts(s):
     return d.timestamp()
 
 
+_SIGLE = {}   # sigla -> driverId, di tutti i piloti visti finora (anche in altre pagine di Jolpica)
+
+
 def completa_sigle(x):
-    """Jolpica a volte non dà la sigla ai piloti di riserva (Hirakawa in Messico 2026): la ricava dal cognome."""
-    if isinstance(x, list):
-        for v in x:
-            completa_sigle(v)
-    elif isinstance(x, dict):
-        if "driverId" in x and not x.get("code"):
-            lettere = [c for c in unicodedata.normalize("NFKD", x.get("familyName") or x["driverId"]) if c.isalpha()]
-            x["code"] = "".join(lettere[:3]).upper()
-        for v in x.values():
-            completa_sigle(v)
+    """Jolpica a volte non dà la sigla ai piloti di riserva (Hirakawa in Messico 2026): la ricava dal cognome.
+    La sigla è la chiave di tutte le statistiche, quindi non deve mai coincidere con quella di un altro pilota
+    (Verschoor non può diventare VER come Verstappen): in quel caso si cambia la terza lettera, poi la seconda."""
+    piloti = []
+
+    def cerca(y):
+        if isinstance(y, list):
+            for v in y:
+                cerca(v)
+        elif isinstance(y, dict):
+            if "driverId" in y:
+                piloti.append(y)
+            for v in y.values():
+                cerca(v)
+
+    cerca(x)
+    for d in piloti:
+        if d.get("code") and not d.get("code_ricavato"):
+            _SIGLE[d["code"]] = d["driverId"]   # una sigla vera ha la precedenza su una ricavata
+    for d in piloti:
+        if d.get("code") and not d.get("code_ricavato"):
+            continue
+        lettere = [c.upper() for c in unicodedata.normalize("NFKD", d.get("familyName") or d["driverId"]) if c.isalpha()]
+        lettere += [c for c in "XYZ" if c not in lettere]
+        prove = ["".join(lettere[:3])]
+        prove += [lettere[0] + lettere[1] + c for c in lettere[3:]]
+        prove += [lettere[0] + a + b for i, a in enumerate(lettere[2:], 2) for b in lettere[i + 1:]]
+        d["code"] = next((c for c in prove if _SIGLE.get(c, d["driverId"]) == d["driverId"]), prove[0])
+        d["code_ricavato"] = True
+        _SIGLE.setdefault(d["code"], d["driverId"])
     return x
 
 

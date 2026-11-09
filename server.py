@@ -29,7 +29,7 @@ from fonti import Fonti, NonDisponibile, completa_sigle, iso, ts
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("F1LIVE_PORT") or 8781)   # Serie A Live usa 8765 e seguenti, una per campionato
-VERSIONE = "2026-11-01.1"
+VERSIONE = "2026-11-09.1"
 CLOUD = "--cloud" in sys.argv
 ANNO = int(os.environ.get("F1LIVE_ANNO") or 2026)
 SITE_DIR = Path(os.environ.get("F1LIVE_SITE_DIR") or DATA / "sito")
@@ -296,7 +296,9 @@ def calcola(adesso=None, ritara=False):
         "piloti": stat["piloti"], "squadre": stat["squadre"], "degrado_medio": stat["degrado_medio"],
         "pit_medio": stat["pit_medio"],
         "passo": {"squadre": {s: {k: model.r(v.get(k)) for k in ("q", "r", "adatt")} for s, v in val["squadre"].items()}},
-        "storico": {"voci": storico[-80:], "riepilogo": model.riepilogo_storico(storico)},
+        # i ricostruiti sono contati a parte: la taratura che li ha calcolati conosceva già quelle gare
+        "storico": {"voci": storico[-80:], "riepilogo": model.riepilogo_storico([v for v in storico if not v.get("ricostruita")]),
+                    "ricostruiti": model.riepilogo_storico([v for v in storico if v.get("ricostruita")])},
         "ultimo": riepiloghi[-1] if riepiloghi else None,
         "gare_analizzate": sorted(STATO["gare"]),
         "progressione": analisi.progressione(st, squadra_cid),
@@ -356,7 +358,8 @@ def strategia(circ, tracc, stat):
 def aggiorna_storico(contesto, par, adesso, aperti, w_aperto):
     """Lo storico tiene, per ogni sprint e gara, l'ultimo pronostico fatto prima del via e poi l'arrivo vero.
     Le gare corse prima che l'app esistesse vengono ricostruite con i soli dati disponibili prima del via
-    (e segnate come «ricostruite»)."""
+    (e segnate come «ricostruite»). La taratura usata però è quella di oggi, che conosce già quelle gare: per questo
+    il riepilogo le tiene a parte."""
     storico = leggi(FILE_STORICO, []) or []
     per = {(v["round"], v["evento"]): v for v in storico}
     cambiato = False
@@ -730,12 +733,7 @@ async def cloud_main():
         gh_note(f"Sito non pubblicato: {out[-300:]}")
     scrivi(FILE_ESECUZIONE, {"at": time.time(), "inizio": inizio, "errori": errori, "versione": VERSIONE,
                              "prossimo": prossime_sessioni()})
-    for tentativo in (1, 2, 3):
-        ok, out = sito.pubblica(DATA, ["dati"], lease=True)
-        if ok or "stale info" in out or tentativo == 3:
-            break
-        time.sleep(20)
-    log("Dati salvati su GitHub" if ok else f"Dati non salvati: {out[-300:]}")
+    # la copia del giorno prima di salvare i dati, così il giorno segnato in extra.json arriva anche su GitHub
     if os.environ.get("GITHUB_ACTIONS") and FILE_STORICO.exists():
         oggi = time.strftime("%Y-%m-%d")
         if EXTRA.get("storico_giorno") != oggi:
@@ -744,6 +742,12 @@ async def cloud_main():
                 EXTRA["storico_giorno"] = oggi
                 salva_extra()
             log(msg)
+    for tentativo in (1, 2, 3):
+        ok, out = sito.pubblica(DATA, ["dati"], lease=True)
+        if ok or "stale info" in out or tentativo == 3:
+            break
+        time.sleep(20)
+    log("Dati salvati su GitHub" if ok else f"Dati non salvati: {out[-300:]}")
     return 0 if ok and ok_s else 1
 
 

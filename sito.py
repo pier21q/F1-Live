@@ -156,8 +156,28 @@ def pubblica_codice(remote):
         return code == 0, "Codice caricato su GitHub" if code == 0 else out
 
 
+def unisci_storici(*storici):
+    """Un solo storico da più copie: per ogni sprint e gara vince il pronostico fissato davvero al via (non ricostruito),
+    poi il più vicino al via; l'arrivo, se manca, si prende da un'altra copia."""
+    per = {}
+    for storico in storici:
+        for v in storico or []:
+            k = (v["round"], v["evento"])
+            x = per.get(k)
+            if x is None or (not v.get("ricostruita"), v.get("at") or 0) > (not x.get("ricostruita"), x.get("at") or 0):
+                v = dict(v)
+                if x and x.get("ordine") and not v.get("ordine"):
+                    v["ordine"], v["fuori"] = x["ordine"], x.get("fuori") or []
+                per[k] = v
+            elif v.get("ordine") and not x.get("ordine"):
+                x["ordine"], x["fuori"] = v["ordine"], v.get("fuori") or []
+    return sorted(per.values(), key=lambda v: (v["round"], v["evento"] != "Sprint"))
+
+
 def pubblica_dati(data_dir, remote):
-    """Carica nel ramo "dati" i dati del Mac, sovrascrivendo quelli su GitHub (per partire o ripartire da capo)."""
+    """Carica nel ramo "dati" i dati del Mac, sovrascrivendo quelli su GitHub (per partire o ripartire da capo).
+    Lo storico dei pronostici invece si unisce a quello di GitHub: i pronostici fissati lassù mentre il Mac era
+    spento non si perdono."""
     with tempfile.TemporaryDirectory() as tmp:
         dest = Path(tmp) / "dati"
         dest.mkdir()
@@ -171,6 +191,16 @@ def pubblica_dati(data_dir, remote):
         git(dest, "config", "user.name", NOME_GIT)
         git(dest, "config", "user.email", EMAIL_GIT)
         git(dest, "remote", "add", "origin", remote)
+        copie = [json.loads((dest / "storico.json").read_text())] if (dest / "storico.json").exists() else []
+        for ramo in ("dati", "storico"):
+            if git(dest, "fetch", "-q", "--depth=1", "origin", ramo)[0] == 0:
+                code, testo = git(dest, "show", "FETCH_HEAD:storico.json")
+                try:
+                    copie.append(json.loads(testo) if code == 0 else [])
+                except ValueError:
+                    pass
+        if copie:
+            (dest / "storico.json").write_text(json.dumps(unisci_storici(*copie), ensure_ascii=False, separators=(",", ":")))
         salva(dest)
         code, out = git(dest, "push", "-q", "-f", "origin", "HEAD:dati")
         return code == 0, "Dati caricati su GitHub" if code == 0 else out
